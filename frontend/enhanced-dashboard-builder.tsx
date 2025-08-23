@@ -51,9 +51,12 @@ export default function EnhancedDashboardBuilder() {
   // 保存节流：避免频繁写入
   const saveTimerRef = useRef<any>(null)
   const lastSavedSigRef = useRef<string>("")
+  // 新增：加载状态标记，用于控制空态展示逻辑
+  const [loadAttempted, setLoadAttempted] = useState(false)
+  const [loadFailed, setLoadFailed] = useState(false)
 
   // Grid constants for span fallback
-  const TOTAL_COLS = 12
+  const TOTAL_COLS = 48
   const GRID_ROW_HEIGHT = 80
 
   // Add-from-template dialog state
@@ -452,6 +455,7 @@ export default function EnhancedDashboardBuilder() {
     const id = dashIdParam || effectiveDashboardId
     if (!id) return
     setLoadingItems(true)
+    setLoadFailed(false)
     try {
       const components = await api.getEnhancedComponents(id)
       // Execute queries in parallel where needed
@@ -531,8 +535,11 @@ export default function EnhancedDashboardBuilder() {
       })
 
       setCanvasItems(mergedItems)
+      setLoadAttempted(true)
     } catch (error) {
       console.error('Failed to load enhanced components:', error)
+      setLoadFailed(true)
+      setLoadAttempted(true)
     } finally {
       setLoadingItems(false)
     }
@@ -541,9 +548,14 @@ export default function EnhancedDashboardBuilder() {
   // Auto-load components when dashboard changes (URL or api state)
   useEffect(() => {
     if (effectiveDashboardId) {
+      // 切换看板后先显示空画布，再开始加载
+      setLoadAttempted(false)
+      setLoadFailed(false)
       loadCanvasItems(effectiveDashboardId)
     } else {
       setCanvasItems([])
+      setLoadAttempted(false)
+      setLoadFailed(false)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [effectiveDashboardId])
@@ -689,7 +701,7 @@ export default function EnhancedDashboardBuilder() {
   // 中间面板内容
   const centerPanel = (
     <div className="h-full flex flex-col" onDragOver={handleDragOver} onDrop={handleDrop}>
-      {canvasItems.length === 0 ? (
+      {loadFailed ? (
         <div className="flex-1 flex items-center justify-center p-8">
           <div className="grid grid-cols-1 gap-6 max-w-2xl w-full">
             <Card className="cursor-pointer hover:shadow-lg transition-shadow">
@@ -732,9 +744,7 @@ export default function EnhancedDashboardBuilder() {
           <div className="flex-1">
             <DashboardCanvas
               items={canvasItems}
-              onItemsChange={(items) => {
-                setCanvasItems(items)
-              }}
+              onItemsChange={(items) => { setCanvasItems(items) }}
               onDeleteItem={handleDeleteItem}
               onAddToContext={handleAddToContext}
               onMinimizeItem={handleMinimizeItem}

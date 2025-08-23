@@ -308,6 +308,24 @@ function AppShellInner({ children }: AppShellProps) {
       onCreateDashboard={() => setShowCreateDashboard(true)}
       dashboards={apiState.dashboards}
       loading={apiState.loading.dashboards}
+      onDeleteDashboard={async (id) => {
+        const ok = await apiActions.deleteDashboard(id)
+        if (ok) {
+          if (selectedDashboard === id) {
+            const remaining = apiState.dashboards.filter(d => d.id !== id)
+            const next = remaining[0]
+            if (next) {
+              setSelectedDashboard(next.id)
+              apiActions.selectDashboard(next)
+              router.push("/")
+            } else {
+              setSelectedDashboard("")
+              router.push("/")
+            }
+          }
+        }
+        return ok
+      }}
     />
   )
 
@@ -339,17 +357,17 @@ function AppShellInner({ children }: AppShellProps) {
       <Dialog open={showCreateDashboard} onOpenChange={setShowCreateDashboard}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>创建新仪表板</DialogTitle>
-            <DialogDescription>创建一个新的仪表板来组织您的数据分析</DialogDescription>
+            <DialogTitle>创建新看板</DialogTitle>
+            <DialogDescription>创建一个新的看板来组织您的数据分析</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <label htmlFor="dashboard-name" className="text-sm font-medium">仪表板名称</label>
-              <Input id="dashboard-name" value={newDashboardName} onChange={(e) => setNewDashboardName(e.target.value)} placeholder="输入仪表板名称" />
+              <label htmlFor="dashboard-name" className="text-sm font-medium">看板名称</label>
+              <Input id="dashboard-name" value={newDashboardName} onChange={(e) => setNewDashboardName(e.target.value)} placeholder="输入看板名称" />
             </div>
             <div>
               <label htmlFor="dashboard-description" className="text-sm font-medium">描述（可选）</label>
-              <Textarea id="dashboard-description" value={newDashboardDescription} onChange={(e) => setNewDashboardDescription(e.target.value)} placeholder="输入仪表板描述" rows={3} />
+              <Textarea id="dashboard-description" value={newDashboardDescription} onChange={(e) => setNewDashboardDescription(e.target.value)} placeholder="输入看板描述" rows={3} />
             </div>
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setShowCreateDashboard(false)}>取消</Button>

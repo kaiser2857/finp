@@ -450,6 +450,14 @@ def get_datasource_enhanced(datasource_id: UUID, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Datasource not found")
     return datasource
 
+# New: update enhanced datasource
+@app.patch("/datasources/enhanced/{datasource_id}", response_model=DatasourceResponseEnhanced)
+def update_datasource_enhanced(datasource_id: UUID, datasource: DatasourceUpdateEnhanced, db: Session = Depends(get_db)):
+    updated = enhanced_crud.update_datasource_enhanced(db, datasource_id, datasource)
+    if not updated:
+        raise HTTPException(status_code=404, detail="Datasource not found")
+    return updated
+
 # NEW: Preview datasource data endpoint
 @app.get("/datasources/{datasource_id}/preview")
 def preview_datasource(datasource_id: UUID, limit: int = 100, offset: int = 0, db: Session = Depends(get_db)):

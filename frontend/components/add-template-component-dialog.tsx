@@ -150,16 +150,19 @@ export function AddTemplateComponentDialog({ open, onOpenChange, dashboardId, on
   }, [open, mode, componentToEdit, defaultTemplateType])
 
   useEffect(() => {
-    if (mode === "create") setEncoding({})
-    if (templateType === "text") {
-      if (mode === "create") setName("文本")
-    } else {
-      if (mode === "create") {
-        const map: Record<TemplateType, string> = { bar: "柱状图", line: "折线图", candlestick: "K线图", table: "表格", metric: "指标卡", text: "文本", watchlist: "自选股" }
-        setName(map[templateType])
-      }
-    }
-  }, [templateType, mode])
+    if (!open || mode !== "create") return
+    // Reset form when switching template type in create mode
+    setDatasourceId("")
+    setEncoding({})
+    setSeriesList([])
+    setStacked(false)
+    setTextContent("")
+    setPreviewResult(null)
+    setPreviewError(null)
+    // Default name by type
+    const map: Record<TemplateType, string> = { bar: "柱状图", line: "折线图", candlestick: "K线图", table: "表格", metric: "指标卡", text: "文本", watchlist: "自选股" }
+    setName(map[templateType])
+  }, [templateType, mode, open])
 
   useEffect(() => {
     if (open && defaultTemplateType && mode === "create") {

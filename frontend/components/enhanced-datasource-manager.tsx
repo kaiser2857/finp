@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Plus, RefreshCw, Trash2 } from "lucide-react"
+import { Plus, RefreshCw, Trash2, Edit } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { api, EnhancedDatasource, DatabaseConnection } from "@/lib/api"
 import { DatasourceWizard } from "@/components/datasource-wizard"
@@ -18,6 +18,8 @@ export default function EnhancedDatasourceManager() {
   const [connections, setConnections] = useState<DatabaseConnection[]>([])
   const [loading, setLoading] = useState(false)
   const [wizardOpen, setWizardOpen] = useState(false)
+  const [editOpen, setEditOpen] = useState(false)
+  const [editingDs, setEditingDs] = useState<EnhancedDatasource | null>(null)
   const [detailDs, setDetailDs] = useState<EnhancedDatasource | null>(null)
   const [preview, setPreview] = useState<any | null>(null)
   const [previewLimit, setPreviewLimit] = useState<number>(50)
@@ -113,6 +115,35 @@ export default function EnhancedDatasourceManager() {
     }
   }
 
+  const openEdit = async (ds: EnhancedDatasource) => {
+    try {
+      const full = await api.getEnhancedDatasourceDetail(ds.id)
+      setEditingDs(full)
+      setEditOpen(true)
+    } catch {
+      setEditingDs(ds)
+      setEditOpen(true)
+    }
+  }
+
+  const handleUpdate = async (id: string, payload: any) => {
+    try {
+      const updated = await api.updateEnhancedDatasource(id, payload)
+      // update list
+      setDatasources(prev => prev.map(d => (d.id === id ? { ...d, ...updated } : d)))
+      // update detail if open
+      setDetailDs(prev => (prev && prev.id === id ? { ...prev, ...updated } as any : prev))
+      toast({ title: '已保存', description: `数据源 ${updated.name} 已更新` })
+      // refresh preview if query/table changed
+      if (detailDs && detailDs.id === id) {
+        try { await reloadPreview() } catch {}
+      }
+    } catch (e) {
+      toast({ title: '错误', description: '更新数据源失败', variant: 'destructive' })
+      throw e
+    }
+  }
+
   const handlePrevPage = async () => {
     if (!detailDs) return
     const nextOffset = Math.max(0, previewOffset - previewLimit)
@@ -190,6 +221,9 @@ export default function EnhancedDatasourceManager() {
                       {ds.type === "table" ? ds.table_name : ds.type === "query" ? (ds.sql?.slice(0, 40) + (ds.sql && ds.sql.length > 40 ? "…" : "")) : ""}
                     </TableCell>
                     <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                      <Button variant="outline" size="icon" className="mr-1" onClick={() => openEdit(ds)} title="编辑">
+                        <Edit className="h-4 w-4" />
+                      </Button>
                       <Button variant="ghost" size="icon" onClick={() => handleDelete(ds)}>
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -222,11 +256,11 @@ export default function EnhancedDatasourceManager() {
                 <Button variant="outline" size="sm" onClick={() => setDetailDs(null)}>关闭</Button>
               </div>
             </div>
-            <div className="text-sm">连接：{connName((detailDs as any).database_connection_id)}</div>
+            <div className="text-sm">数据库连接：{connName((detailDs as any).database_connection_id)}</div>
             {detailDs.type === 'table' ? (
               <div className="text-sm">数据表：{detailDs.table_name}</div>
             ) : detailDs.type === 'query' ? (
-              <div className="text-xs whitespace-pre-wrap bg-muted/40 p-2 rounded">{detailDs.sql}</div>
+              <div className="text-xs whitespace-pre-wrap bg-muted/40 p-2 rounded">查询SQL：{detailDs.sql}</div>
             ) : null}
 
             {/* Columns Schema */}
@@ -381,6 +415,24 @@ export default function EnhancedDatasourceManager() {
         onOpenChange={setWizardOpen}
         connections={connections}
         onCreate={handleCreate}
+      />
+
+      <DatasourceWizard
+        open={editOpen}
+        onOpenChange={(v) => { setEditOpen(v); if (!v) setEditingDs(null) }}
+        connections={connections}
+        onCreate={() => {}}
+        mode="edit"
+        initialValues={editingDs ? {
+          id: editingDs.id,
+          name: editingDs.name,
+          type: editingDs.type as any,
+          database_connection_id: (editingDs as any).database_connection_id,
+          table_name: editingDs.table_name,
+          sql: editingDs.sql,
+          description: editingDs.description,
+        } : null}
+        onUpdate={handleUpdate}
       />
     </div>
   )

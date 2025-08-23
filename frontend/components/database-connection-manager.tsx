@@ -51,6 +51,14 @@ export function DatabaseConnectionManager() {
     loadConnections()
   }, [])
 
+  React.useEffect(() => {
+    // When dialog closes, reset form state
+    if (!isFormOpen) {
+      setEditingConnection(null)
+      setFormData(initialFormData)
+    }
+  }, [isFormOpen])
+
   const loadConnections = async () => {
     try {
       setIsLoading(true)
@@ -95,6 +103,7 @@ export function DatabaseConnectionManager() {
       }
 
       setIsFormOpen(false)
+      // Reset form after submit
       setEditingConnection(null)
       setFormData(initialFormData)
       loadConnections()
@@ -276,7 +285,7 @@ export function DatabaseConnectionManager() {
               </div>
 
               <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setIsFormOpen(false)}>
+                <Button type="button" variant="outline" onClick={() => { setIsFormOpen(false); setEditingConnection(null); setFormData(initialFormData) }}>
                   取消
                 </Button>
                 <Button type="submit" disabled={isLoading}>

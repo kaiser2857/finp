@@ -16,17 +16,54 @@ interface Props {
   onOpenChange: (open: boolean) => void
   connections: DatabaseConnection[]
   onCreate: (payload: any) => Promise<void> | void
+  // New: edit mode support
+  mode?: 'create' | 'edit'
+  initialValues?: {
+    id?: string
+    name?: string
+    type?: 'table' | 'query'
+    database_connection_id?: string
+    table_name?: string
+    sql?: string
+    description?: string
+    cache_timeout?: number
+    is_active?: boolean
+  } | null
+  onUpdate?: (id: string, payload: any) => Promise<void> | void
 }
 
-export function DatasourceWizard({ open, onOpenChange, connections, onCreate }: Props) {
+export function DatasourceWizard({ open, onOpenChange, connections, onCreate, mode = 'create', initialValues, onUpdate }: Props) {
   const [type, setType] = React.useState<'table' | 'query'>("table")
   const [name, setName] = React.useState("")
   const [connectionId, setConnectionId] = React.useState<string | undefined>()
   const [tableName, setTableName] = React.useState("")
   const [sql, setSql] = React.useState("")
+  const [description, setDescription] = React.useState("")
   const [submitting, setSubmitting] = React.useState(false)
   const [tables, setTables] = React.useState<string[]>([])
   const [loadingTables, setLoadingTables] = React.useState(false)
+
+  const resetForm = React.useCallback(() => {
+    setType("table")
+    setName("")
+    setConnectionId(undefined)
+    setTableName("")
+    setSql("")
+    setDescription("")
+    setTables([])
+  }, [])
+
+  // Prefill on open in edit mode
+  React.useEffect(() => {
+    if (open && mode === 'edit' && initialValues) {
+      setName(initialValues.name || '')
+      setType((initialValues.type as any) || 'table')
+      setConnectionId(initialValues.database_connection_id)
+      setTableName(initialValues.table_name || '')
+      setSql(initialValues.sql || '')
+      setDescription(initialValues.description || '')
+    }
+  }, [open, mode, initialValues])
 
   React.useEffect(() => {
     // reset table selection when connection or type changes
@@ -47,6 +84,11 @@ export function DatasourceWizard({ open, onOpenChange, connections, onCreate }: 
     }
   }, [type, connectionId])
 
+  React.useEffect(() => {
+    // When dialog closes, clear fields
+    if (!open) resetForm()
+  }, [open, resetForm])
+
   const reloadTables = async () => {
     if (!connectionId) return
     setLoadingTables(true)
@@ -61,14 +103,30 @@ export function DatasourceWizard({ open, onOpenChange, connections, onCreate }: 
   const submit = async () => {
     setSubmitting(true)
     try {
-      await onCreate({
-        name,
-        type,
-        database_connection_id: connectionId,
-        table_name: type === 'table' ? tableName : undefined,
-        sql: type === 'query' ? sql : undefined,
-        configuration: {},
-      })
+      if (mode === 'edit' && initialValues?.id && onUpdate) {
+        await onUpdate(initialValues.id, {
+          name,
+          description,
+          // allow switching between table/query
+          table_name: type === 'table' ? tableName : undefined,
+          sql: type === 'query' ? sql : undefined,
+          // do not allow changing connection in update for now unless backend supports it
+          // database_connection_id: connectionId,
+        })
+      } else {
+        await onCreate({
+          name,
+          type,
+          database_connection_id: connectionId,
+          table_name: type === 'table' ? tableName : undefined,
+          sql: type === 'query' ? sql : undefined,
+          description,
+          configuration: {},
+        })
+      }
+      // reset after success and close dialog
+      resetForm()
+      onOpenChange(false)
     } finally {
       setSubmitting(false)
     }
@@ -78,8 +136,8 @@ export function DatasourceWizard({ open, onOpenChange, connections, onCreate }: 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>创建数据源</DialogTitle>
-          <DialogDescription>使用数据表或 SQL 查询作为数据源</DialogDescription>
+          <DialogTitle>{mode === 'edit' ? '编辑数据源' : '创建数据源'}</DialogTitle>
+          <DialogDescription>{mode === 'edit' ? '更新数据源信息' : '使用数据表或 SQL 查询作为数据源'}</DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <div className="grid gap-2">
@@ -88,7 +146,7 @@ export function DatasourceWizard({ open, onOpenChange, connections, onCreate }: 
           </div>
           <div className="grid gap-2">
             <Label>类型</Label>
-            <Select value={type} onValueChange={(v: any) => setType(v)}>
+            <Select value={type} onValueChange={(v: any) => setType(v)} disabled={mode === 'edit'}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -100,7 +158,7 @@ export function DatasourceWizard({ open, onOpenChange, connections, onCreate }: 
           </div>
           <div className="grid gap-2">
             <Label>数据库连接</Label>
-            <Select value={connectionId} onValueChange={(v: any) => setConnectionId(v)}>
+            <Select value={connectionId} onValueChange={(v: any) => setConnectionId(v)} disabled={mode === 'edit'}>
               <SelectTrigger>
                 <SelectValue placeholder="选择连接" />
               </SelectTrigger>
@@ -119,7 +177,7 @@ export function DatasourceWizard({ open, onOpenChange, connections, onCreate }: 
                   <RefreshCw className="w-3 h-3 mr-1" /> {loadingTables ? '加载中' : '刷新'}
                 </Button>
               </div>
-              <Select value={tableName} onValueChange={(v: any) => setTableName(v)} disabled={!connectionId || loadingTables}>
+              <Select value={tableName} onValueChange={(v: any) => setTableName(v)} disabled={!connectionId || loadingTables || mode === 'edit'}>
                 <SelectTrigger>
                   <SelectValue placeholder={!connectionId ? '请先选择连接' : (loadingTables ? '正在加载数据表…' : (tables.length ? '选择数据表' : '未找到数据表'))} />
                 </SelectTrigger>
@@ -136,10 +194,14 @@ export function DatasourceWizard({ open, onOpenChange, connections, onCreate }: 
               <Textarea value={sql} onChange={e => setSql(e.target.value)} rows={6} placeholder="select * from ..." />
             </div>
           )}
+          <div className="grid gap-2">
+            <Label>描述</Label>
+            <Textarea value={description} onChange={e => setDescription(e.target.value)} rows={3} placeholder="可选" />
+          </div>
           <div className="flex justify-end gap-2 pt-2">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>取消</Button>
-            <Button onClick={submit} disabled={submitting || !name || !connectionId || (type === 'table' ? !tableName : !sql)}>
-              {submitting ? '创建中…' : '创建'}
+            <Button variant="outline" onClick={() => { resetForm(); onOpenChange(false) }}>取消</Button>
+            <Button onClick={submit} disabled={submitting || !name || (!connectionId && mode !== 'edit') || (type === 'table' ? !tableName : !sql)}>
+              {submitting ? (mode === 'edit' ? '保存中…' : '创建中…') : (mode === 'edit' ? '保存' : '创建')}
             </Button>
           </div>
         </div>

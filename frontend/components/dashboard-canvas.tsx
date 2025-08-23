@@ -44,7 +44,7 @@ interface DashboardCanvasProps {
 }
 
 const HEADER_HEIGHT = 56
-const TOTAL_COLS = 12
+const TOTAL_COLS = 48
 const GRID_GAP = 16
 const GRID_ROW_HEIGHT = 80
 
@@ -715,7 +715,7 @@ export default function DashboardCanvas({
             {dragGridTarget && draggedItem && !isResizing && (
               <div
                 className="border-2 border-dashed border-blue-400/70 bg-blue-50/30 rounded-sm"
-                style={() => {
+                style={(() => {
                   const item = itemsRef.current.find((it) => it.id === draggedItem)
                   const spans = item ? ensureSpans(item) : { colSpan: 1, rowSpan: 1 }
                   return {
@@ -724,7 +724,7 @@ export default function DashboardCanvas({
                     pointerEvents: "none",
                     minHeight: GRID_ROW_HEIGHT,
                   } as React.CSSProperties
-                }}
+                })()}
               />
             )}
           </div>

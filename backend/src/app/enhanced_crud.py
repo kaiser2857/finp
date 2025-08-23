@@ -167,6 +167,48 @@ class EnhancedCRUD:
         
         return db_datasource
     
+    def update_datasource_enhanced(self, db: Session, datasource_id: UUID, update: "DatasourceUpdateEnhanced"):
+        """更新增强的数据源，支持部分字段更新"""
+        try:
+            ds = db.query(Datasource).filter(Datasource.id == datasource_id).first()
+            if not ds:
+                return None
+            payload = {}
+            try:
+                # pydantic model -> dict
+                payload = update.model_dump(exclude_unset=True)
+            except Exception:
+                # assume dict-like
+                try:
+                    payload = dict(update or {})
+                except Exception:
+                    payload = {}
+            # Only allow updating known fields
+            allowed = {
+                "name", "description", "table_name", "sql", "api_endpoint", "file_path",
+                "configuration", "cache_timeout", "is_active"
+            }
+            for k, v in list(payload.items()):
+                if k not in allowed:
+                    payload.pop(k, None)
+            # Apply updates
+            for k, v in payload.items():
+                setattr(ds, k, v)
+            db.add(ds)
+            db.commit()
+            db.refresh(ds)
+            # 审计日志
+            try:
+                self._log_action(db, "update", "datasource", ds.id, payload)
+                db.commit()
+            except Exception:
+                pass
+            # 返回规范化后的对象
+            return self._normalize_datasource(ds)
+        except Exception as e:
+            db.rollback()
+            raise e
+
     def _normalize_datasource(self, ds):
         # Coerce enum to its value or leave string as-is
         try:

@@ -2,7 +2,7 @@
 const API_BASE_URL = 'http://localhost:8787'
 
 // Grid layout constants for transforms (keep in sync with UI)
-const TOTAL_COLS = 12
+const TOTAL_COLS = 48
 const GRID_ROW_HEIGHT = 80
 
 // API Types
@@ -487,6 +487,13 @@ class ApiClient {
 
   async getEnhancedDatasourceDetail(id: string): Promise<EnhancedDatasource> {
     return this.request(`/datasources/enhanced/${id}`)
+  }
+
+  async updateEnhancedDatasource(id: string, update: Partial<EnhancedDatasource> & { cache_timeout?: number; is_active?: boolean }): Promise<EnhancedDatasource> {
+    return this.request(`/datasources/enhanced/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(update),
+    })
   }
 
   async previewDatasourceData(datasourceId: string, limit: number = 100, offset?: number): Promise<QueryResult & { datasource_info: any; offset?: number; limit?: number }> {
