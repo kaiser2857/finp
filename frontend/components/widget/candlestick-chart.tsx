@@ -65,17 +65,21 @@ export default function CandlestickChart({ symbol, companyName, data: initialDat
     return data
   }, [])
 
-  // 初始化数据：优先使用外部传入数据
+  // 当外部未提供数据时生成一次本地数据；若提供了数据则不做镜像，直接使用 props
   useEffect(() => {
     if (initialData && Array.isArray(initialData) && initialData.length > 0) {
-      setData(initialData)
-    } else {
-      const basePrice = symbol === "AAPL" ? 226 : symbol === "NVDA" ? 175 : 505
-      setData(generateCandlestickData(365, basePrice))
+      return
     }
+    const basePrice = symbol === "AAPL" ? 226 : symbol === "NVDA" ? 175 : 505
+    setData(generateCandlestickData(365, basePrice))
   }, [initialData, symbol, generateCandlestickData])
 
-  // 根据选择范围设置可视窗口
+  // 统一的数据源：优先使用 props 传入的数据
+  const dataSrc = useMemo<CandlestickData[]>(() => {
+    return (initialData && Array.isArray(initialData) && initialData.length > 0) ? initialData : data
+  }, [initialData, data])
+
+  // 根据选择范围设置可视窗口（基于 dataSrc）
   const periodToCount = useCallback((period: string, maxLen: number) => {
     const map: Record<string, number> = { "5yr": 1825, "3yr": 1095, "1yr": 365, "6mo": 180, "3mo": 90, "1wk": 7 }
     const target = map[period] ?? 365
@@ -83,18 +87,18 @@ export default function CandlestickChart({ symbol, companyName, data: initialDat
   }, [])
 
   useEffect(() => {
-    if (data.length === 0) return
-    const target = periodToCount(selectedPeriod, data.length)
+    if (dataSrc.length === 0) return
+    const target = periodToCount(selectedPeriod, dataSrc.length)
     setCandlesPerScreen(target)
-    setViewOffset(Math.max(0, data.length - target))
-  }, [selectedPeriod, data.length, periodToCount])
+    setViewOffset(Math.max(0, dataSrc.length - target))
+  }, [selectedPeriod, dataSrc.length, periodToCount])
 
-  // 计算头部统计数据：当前可视范围内的末值与涨跌幅
+  // 计算头部统计数据（基于 dataSrc）
   const headerStats = useMemo<HeaderStats>(() => {
-    if (!data.length) return { current: 0, changeAbs: 0, changePct: 0 }
-    const startIdx = Math.max(0, Math.min(data.length - 1, Math.round(viewOffset)))
-    const count = Math.max(1, Math.min(data.length - startIdx, Math.round(candlesPerScreen)))
-    const slice = data.slice(startIdx, startIdx + count)
+    if (!dataSrc.length) return { current: 0, changeAbs: 0, changePct: 0 }
+    const startIdx = Math.max(0, Math.min(dataSrc.length - 1, Math.round(viewOffset)))
+    const count = Math.max(1, Math.min(dataSrc.length - startIdx, Math.round(candlesPerScreen)))
+    const slice = dataSrc.slice(startIdx, startIdx + count)
     const first = slice[0]
     const last = slice[slice.length - 1]
     const current = last?.close ?? 0
@@ -102,7 +106,7 @@ export default function CandlestickChart({ symbol, companyName, data: initialDat
     const changeAbs = current - base
     const changePct = base ? (changeAbs / base) * 100 : 0
     return { current, changeAbs, changePct }
-  }, [data, viewOffset, candlesPerScreen])
+  }, [dataSrc, viewOffset, candlesPerScreen])
 
   // 通知父级更新头部统计数据（避免因回调引用变化导致的无限循环）
   const headerCbRef = useRef<typeof onHeaderStatsChange>(onHeaderStatsChange)
@@ -117,17 +121,11 @@ export default function CandlestickChart({ symbol, companyName, data: initialDat
     }
   }, [headerStats])
 
-  // 移除独立的 currentPrice/prevPrice 计算，改用基于可视窗口的 headerStats
-  // const currentPrice = useMemo(() => (data.length > 0 ? data[data.length - 1].close : 0), [data])
-  // const prevPrice = useMemo(() => (data.length > 1 ? data[data.length - 2].close : currentPrice), [data, currentPrice])
-  // const priceChange = currentPrice - prevPrice
-  // const priceChangePct = prevPrice ? (priceChange / prevPrice) * 100 : 0
-
-  // 绘制K线图
+  // 绘制K线图（基于 dataSrc）
   const drawChart = useCallback(() => {
     const canvas = canvasRef.current
     const container = containerRef.current
-    if (!canvas || !container || data.length === 0) return
+    if (!canvas || !container || dataSrc.length === 0) return
 
     const ctx = canvas.getContext("2d")
     if (!ctx) return
@@ -152,10 +150,10 @@ export default function CandlestickChart({ symbol, companyName, data: initialDat
     ctx.fillRect(0, 0, width, height)
 
     // 计算可见数据范围（基于candlesPerScreen与viewOffset）
-    const visibleDataCount = Math.max(1, Math.min(data.length, Math.round(candlesPerScreen)))
-    const startIndex = Math.max(0, Math.min(data.length - visibleDataCount, Math.round(viewOffset)))
-    const endIndex = Math.min(data.length, startIndex + visibleDataCount)
-    const visibleData = data.slice(startIndex, endIndex)
+    const visibleDataCount = Math.max(1, Math.min(dataSrc.length, Math.round(candlesPerScreen)))
+    const startIndex = Math.max(0, Math.min(dataSrc.length - visibleDataCount, Math.round(viewOffset)))
+    const endIndex = Math.min(dataSrc.length, startIndex + visibleDataCount)
+    const visibleData = dataSrc.slice(startIndex, endIndex)
 
     if (visibleData.length === 0) return
 
@@ -331,14 +329,14 @@ export default function CandlestickChart({ symbol, companyName, data: initialDat
       ctx.textBaseline = "middle"
       ctx.fillText(dateLabel, xBoxX + padX2, xBoxY + xBoxH / 2)
     }
-  }, [data, viewOffset, candlesPerScreen, crosshair, hoveredData])
+  }, [dataSrc, viewOffset, candlesPerScreen, crosshair, hoveredData])
 
   // 重绘图表
   useEffect(() => {
     drawChart()
   }, [drawChart])
 
-  // 鼠标事件处理（拖拽平移）
+  // 鼠标事件处理（拖拽平移）基于 dataSrc
   const handleMouseDown = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
@@ -355,17 +353,15 @@ export default function CandlestickChart({ symbol, companyName, data: initialDat
     const x = e.clientX - rect.left
     const y = e.clientY - rect.top
 
-    // 避免重复设置相同坐标造成不必要渲染
     setCrosshair((prev) => (prev && prev.x === x && prev.y === y) ? prev : { x, y })
 
-    // 可视窗口信息
     const chartWidth = rect.width - 120
-    const visibleDataCount = Math.max(1, Math.min(data.length, Math.round(candlesPerScreen)))
-    const startIndex = Math.max(0, Math.min(data.length - visibleDataCount, Math.round(viewOffset)))
+    const visibleDataCount = Math.max(1, Math.min(dataSrc.length, Math.round(candlesPerScreen)))
+    const startIndex = Math.max(0, Math.min(dataSrc.length - visibleDataCount, Math.round(viewOffset)))
 
     const dataIndex = Math.floor(((x - 60) / chartWidth) * visibleDataCount)
     if (dataIndex >= 0 && dataIndex < visibleDataCount) {
-      const d = data[startIndex + dataIndex]
+      const d = dataSrc[startIndex + dataIndex]
       setHoveredData((prev) => (prev === d ? prev : d))
     } else {
       if (hoveredData !== null) setHoveredData(null)
@@ -376,7 +372,7 @@ export default function CandlestickChart({ symbol, companyName, data: initialDat
       const countsPerPixel = visibleDataCount / chartWidth
       setViewOffset((prev) => {
         const next = prev - deltaX * countsPerPixel
-        return Math.max(0, Math.min(data.length - visibleDataCount, next))
+        return Math.max(0, Math.min(dataSrc.length - visibleDataCount, next))
       })
       setDragStart({ x: e.clientX, y: e.clientY })
     }
@@ -397,27 +393,27 @@ export default function CandlestickChart({ symbol, companyName, data: initialDat
   // 以鼠标位置为锚点执行缩放（共享给原生/React 事件）
   const performZoom = useCallback((clientX: number, deltaY: number) => {
     const rect = containerRef.current?.getBoundingClientRect()
-    if (!rect || data.length === 0) return
+    if (!rect || dataSrc.length === 0) return
 
     const x = clientX - rect.left
     const chartWidth = rect.width - 120
 
-    const oldCount = Math.max(1, Math.min(data.length, Math.round(candlesPerScreen)))
-    const startIndex = Math.max(0, Math.min(data.length - oldCount, Math.round(viewOffset)))
+    const oldCount = Math.max(1, Math.min(dataSrc.length, Math.round(candlesPerScreen)))
+    const startIndex = Math.max(0, Math.min(dataSrc.length - oldCount, Math.round(viewOffset)))
     const xRel = Math.max(0, Math.min(1, (x - 60) / chartWidth))
     const anchorIndex = startIndex + xRel * oldCount
 
     const zoomIn = deltaY < 0
     const factor = zoomIn ? 0.9 : 1 / 0.9
     const minCount = 10
-    const maxCount = data.length
+    const maxCount = dataSrc.length
     const newCount = Math.max(minCount, Math.min(maxCount, Math.round(oldCount * factor)))
 
-    const newStart = Math.max(0, Math.min(data.length - newCount, Math.round(anchorIndex - xRel * newCount)))
+    const newStart = Math.max(0, Math.min(dataSrc.length - newCount, Math.round(anchorIndex - xRel * newCount)))
 
     setCandlesPerScreen(newCount)
     setViewOffset(newStart)
-  }, [data.length, candlesPerScreen, viewOffset])
+  }, [dataSrc, candlesPerScreen, viewOffset])
 
   // 滚轮缩放：以鼠标位置为锚点进行缩放，并阻止容器滚动
   const handleWheel = (e: React.WheelEvent) => {

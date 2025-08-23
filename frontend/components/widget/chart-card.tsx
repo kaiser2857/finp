@@ -68,28 +68,47 @@ export default function ChartCard({ type, data, title, stacked }: ChartCardProps
     return { start, count, end }
   }, [labels.length, itemsPerScreen, viewOffset])
 
-  const visibleValuesStats = useMemo(() => {
+  const visibleYExtents = useMemo(() => {
     if (!labels.length || !datasets.length || visibleRange.count === 0) {
       return { min: 0, max: 1 }
     }
     let min = Number.POSITIVE_INFINITY
     let max = Number.NEGATIVE_INFINITY
-    for (let i = visibleRange.start; i < visibleRange.end; i++) {
-      for (const ds of datasets) {
-        const v = Number(ds.data?.[i])
-        if (!Number.isFinite(v)) continue
-        if (v < min) min = v
-        if (v > max) max = v
+    if (stacked) {
+      // For stacked charts, scale should reflect sum per x (pos and neg separately)
+      for (let i = visibleRange.start; i < visibleRange.end; i++) {
+        let pos = 0
+        let neg = 0
+        for (const ds of datasets) {
+          const v = Number(ds.data?.[i])
+          if (!Number.isFinite(v)) continue
+          if (v >= 0) pos += v
+          else neg += v
+        }
+        if (pos > max) max = pos
+        if (neg < min) min = neg
       }
+      // include baseline 0 when there are only positives or only negatives
+      if (!Number.isFinite(min)) min = 0
+      if (!Number.isFinite(max)) max = 0
+    } else {
+      // Non-stacked: use individual dataset values
+      for (let i = visibleRange.start; i < visibleRange.end; i++) {
+        for (const ds of datasets) {
+          const v = Number(ds.data?.[i])
+          if (!Number.isFinite(v)) continue
+          if (v < min) min = v
+          if (v > max) max = v
+        }
+      }
+      if (!Number.isFinite(min) || !Number.isFinite(max)) return { min: 0, max: 1 }
     }
-    if (!Number.isFinite(min) || !Number.isFinite(max)) return { min: 0, max: 1 }
     if (min === max) {
-      // expand degenerate range slightly
       const eps = Math.abs(min || 1) * 0.05
       return { min: min - eps, max: max + eps }
     }
     return { min, max }
-  }, [labels.length, datasets, visibleRange])
+  }, [labels.length, datasets, visibleRange, stacked])
 
   const drawChart = useCallback(() => {
     const canvas = canvasRef.current
@@ -141,8 +160,8 @@ export default function ChartCard({ type, data, title, stacked }: ChartCardProps
     const { start, end, count } = visibleRange
 
     // compute y-scale
-    const yMinRaw = type === "bar" ? Math.min(0, visibleValuesStats.min) : visibleValuesStats.min
-    const yMaxRaw = type === "bar" ? Math.max(0, visibleValuesStats.max) : visibleValuesStats.max
+    const yMinRaw = type === "bar" ? Math.min(0, visibleYExtents.min) : visibleYExtents.min
+    const yMaxRaw = type === "bar" ? Math.max(0, visibleYExtents.max) : visibleYExtents.max
     const range = yMaxRaw - yMinRaw
     const pad = range * 0.1
     const yMin = yMinRaw - pad
@@ -214,6 +233,21 @@ export default function ChartCard({ type, data, title, stacked }: ChartCardProps
 
     // draw datasets
     if (type === "line") {
+      // Precompute cumulative sums for stacked line
+      let cumByDs: number[][] | null = null
+      if (stacked) {
+        cumByDs = Array.from({ length: datasets.length }, () => new Array(labels.length).fill(NaN))
+        for (let i = 0; i < labels.length; i++) {
+          let pos = 0
+          let neg = 0
+          for (let di = 0; di < datasets.length; di++) {
+            const v = Number(datasets[di].data?.[i])
+            if (!Number.isFinite(v)) { cumByDs[di][i] = NaN; continue }
+            if (v >= 0) { pos += v; cumByDs[di][i] = pos }
+            else { neg += v; cumByDs[di][i] = neg }
+          }
+        }
+      }
       // lines
       for (let di = 0; di < datasets.length; di++) {
         const ds = datasets[di]
@@ -224,13 +258,13 @@ export default function ChartCard({ type, data, title, stacked }: ChartCardProps
         let started = false
         for (let i = 0; i < count; i++) {
           const idx = start + i
-          const v = Number(ds.data?.[idx])
-          if (!Number.isFinite(v)) {
+          const vPlot = stacked && cumByDs ? cumByDs[di][idx] : Number(ds.data?.[idx])
+          if (!Number.isFinite(vPlot)) {
             started = false
             continue
           }
           const x = padding.left + (i * chartWidth) / count + chartWidth / count / 2
-          const y = yToPx(v)
+          const y = yToPx(vPlot)
           if (!started) {
             ctx.moveTo(x, y)
             started = true
@@ -369,11 +403,24 @@ export default function ChartCard({ type, data, title, stacked }: ChartCardProps
       if (type === "line") {
         // draw small circles at data points for all datasets at hovered index
         const cxIdxX = padding.left + idxInWindow * slotW + slotW / 2
+        // recompute cumulative for hovered index if stacked
+        let cumByDsHover: number[] | null = null
+        if (stacked) {
+          cumByDsHover = new Array(datasets.length).fill(NaN)
+          let pos = 0
+          let neg = 0
+          for (let di = 0; di < datasets.length; di++) {
+            const v0 = Number(datasets[di].data?.[start + idxInWindow])
+            if (!Number.isFinite(v0)) { cumByDsHover[di] = NaN; continue }
+            if (v0 >= 0) { pos += v0; cumByDsHover[di] = pos }
+            else { neg += v0; cumByDsHover[di] = neg }
+          }
+        }
         for (let di = 0; di < datasets.length; di++) {
           const ds = datasets[di]
-          const v = Number(ds.data?.[start + idxInWindow])
-          if (!Number.isFinite(v)) continue
-          const cyVal = yToPx(v)
+          const vPlot = stacked && cumByDsHover ? cumByDsHover[di] : Number(ds.data?.[start + idxInWindow])
+          if (!Number.isFinite(vPlot)) continue
+          const cyVal = yToPx(vPlot)
           ctx.fillStyle = ds.color || "#3b82f6"
           ctx.beginPath()
           ctx.arc(cxIdxX, cyVal, 2.5, 0, Math.PI * 2)
@@ -407,7 +454,7 @@ export default function ChartCard({ type, data, title, stacked }: ChartCardProps
         }
       }
     }
-  }, [labels, datasets, datasetsCount, visibleRange, visibleValuesStats, type, crosshair, sizeTick])
+  }, [labels, datasets, datasetsCount, visibleRange, visibleYExtents, type, crosshair, sizeTick, stacked])
 
   useEffect(() => {
     drawChart()

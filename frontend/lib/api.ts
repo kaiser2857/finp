@@ -1,6 +1,10 @@
 // API Client for Investment Research Analytics Backend
 const API_BASE_URL = 'http://localhost:8787'
 
+// Grid layout constants for transforms (keep in sync with UI)
+const TOTAL_COLS = 12
+const GRID_ROW_HEIGHT = 80
+
 // API Types
 export interface Dashboard {
   id: string
@@ -552,7 +556,7 @@ class ApiClient {
     })
   }
 
-  async saveDashboardComponentsLayout(dashboardId: string, updates: Array<{ component_id: string; x_position?: number; y_position?: number; width?: number; height?: number; order_index?: number }>): Promise<any[]> {
+  async saveDashboardComponentsLayout(dashboardId: string, updates: Array<{ component_id: string; x_position?: number; y_position?: number; width?: number; height?: number; order_index?: number; width_ratio?: number }>): Promise<any[]> {
     // Filter out invalid component_ids to avoid backend 422
     const filtered = (updates || []).filter(u => this.isValidUUID(u.component_id))
     return this.request(`/dashboards/${dashboardId}/components/layout`, {
@@ -575,21 +579,31 @@ export const transformCanvasItemToComponent = (
   item: any,
   dashboardId: string
 ): Omit<Component, 'id' | 'created_at' | 'updated_at'> => {
+  // Map grid-based canvas item to backend component fields
+  const safeNum = (v: any, def: number) => (Number.isFinite(Number(v)) ? Number(v) : def)
+  const colSpan = Math.max(1, Math.min(TOTAL_COLS, safeNum(item?.colSpan, Math.round(((item?.widthRatio ?? 0.33) * TOTAL_COLS) || 3))))
+  const rowSpan = Math.max(1, safeNum(item?.rowSpan, Math.round(Math.max(2, (item?.height ?? 240) / GRID_ROW_HEIGHT))))
+  const xPos = safeNum(item?.col, 0)
+  const yPos = safeNum(item?.row, 0)
+  const widthRatio = typeof item?.widthRatio === 'number' ? item.widthRatio : colSpan / TOTAL_COLS
+
   return {
     dashboard_id: dashboardId,
     name: item.title,
     component_type: item.widgetType || item.type,
     config: {
       data: item.data,
+      // Keep legacy fields for backward compatibility
       width: item.width,
       height: item.height,
       minimized: item.minimized,
-      widthRatio: item.widthRatio,
+      widthRatio,
     },
-    x_position: 0, // These would be set by layout
-    y_position: 0,
-    width: item.width,
-    height: item.height,
+    // Persist grid semantics into primary layout fields
+    x_position: xPos,
+    y_position: yPos,
+    width: colSpan,
+    height: rowSpan,
     datasource_id: null, // Could be set later
   }
 }
@@ -597,16 +611,29 @@ export const transformCanvasItemToComponent = (
 export const transformComponentToCanvasItem = (
   component: Component
 ): any => {
+  // Interpret backend width/height as grid spans
+  const colSpan = Math.max(1, Math.min(TOTAL_COLS, Math.round(Number(component.width) || 3)))
+  const rowSpan = Math.max(1, Math.round(Number(component.height) || 3))
+  const colStart = (Number(component.x_position) || 0) >= 1 ? Number(component.x_position) : undefined
+  const rowStart = (Number(component.y_position) || 0) >= 1 ? Number(component.y_position) : undefined
+  const widthRatio = typeof component?.config?.widthRatio === 'number' ? component.config.widthRatio : colSpan / TOTAL_COLS
+
   return {
     id: component.id,
     type: 'widget',
     title: component.name,
     widgetType: component.component_type,
     data: component.config?.data,
-    width: component.width,
-    height: component.height,
-    order: 0, // Could be derived from position
+    // legacy pixel fields kept for compatibility; not used by grid
+    width: 0,
+    height: 0,
+    order: 0,
     minimized: component.config?.minimized || false,
-    widthRatio: component.config?.widthRatio,
+    widthRatio,
+    // grid layout
+    col: colStart,
+    row: rowStart,
+    colSpan,
+    rowSpan,
   }
 }

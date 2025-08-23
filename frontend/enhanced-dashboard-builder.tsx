@@ -28,6 +28,11 @@ interface CanvasItem {
   order: number
   minimized?: boolean
   widthRatio?: number
+  // Grid layout
+  col?: number
+  row?: number
+  colSpan?: number
+  rowSpan?: number
 }
 
 export default function EnhancedDashboardBuilder() {
@@ -46,6 +51,10 @@ export default function EnhancedDashboardBuilder() {
   // 保存节流：避免频繁写入
   const saveTimerRef = useRef<any>(null)
   const lastSavedSigRef = useRef<string>("")
+
+  // Grid constants for span fallback
+  const TOTAL_COLS = 12
+  const GRID_ROW_HEIGHT = 80
 
   // Add-from-template dialog state
   const [showAddTemplate, setShowAddTemplate] = useState(false)
@@ -486,18 +495,29 @@ export default function EnhancedDashboardBuilder() {
           default:
             data = {}
         }
+        // Interpret backend width/height as grid spans
+        const spanW = Math.max(1, Math.min(TOTAL_COLS, Math.round(Number(comp.width) || 3)))
+        const spanH = Math.max(1, Math.round(Number(comp.height) || 3))
+        const colStart = (Number(comp.x_position) || 0) >= 1 ? Number(comp.x_position) : undefined
+        const rowStart = (Number(comp.y_position) || 0) >= 1 ? Number(comp.y_position) : undefined
         return {
           id: comp.id,
           type: "widget",
           title: comp.name,
           widgetType,
           data,
-          width: comp.width || 350,
-          height: comp.height || 280,
+          // legacy pixel fields kept for compatibility; not used by grid
+          width: 0,
+          height: 0,
           order: comp.order_index ?? 0,
           minimized: false,
-          // 读取后端配置中的相对宽度，供前端按比例渲染
-          widthRatio: (comp as any)?.config?.widthRatio ?? undefined,
+          // grid
+          col: colStart,
+          row: rowStart,
+          colSpan: spanW,
+          rowSpan: spanH,
+          // relative width used for charts that need percentages; fallback to spans ratio
+          widthRatio: (comp as any)?.config?.widthRatio ?? (spanW / TOTAL_COLS),
         }
       })
 
@@ -511,8 +531,6 @@ export default function EnhancedDashboardBuilder() {
       })
 
       setCanvasItems(mergedItems)
-      // Update AI context with lightweight refs for right panel
-      aiActions.setCanvasItems(mergedItems.map(it => ({ id: it.id, title: it.title })))
     } catch (error) {
       console.error('Failed to load enhanced components:', error)
     } finally {
@@ -537,11 +555,15 @@ export default function EnhancedDashboardBuilder() {
     try {
       const updates = canvasItems.map((it, idx) => ({
         component_id: it.id,
-        width: Math.round(it.width),
-        height: Math.round(it.height),
+        // Persist spans as width/height in backend layout fields
+        width: Math.max(1, it.colSpan || Math.round(((it.widthRatio ?? 0.33) * TOTAL_COLS) || 3)),
+        height: Math.max(1, it.rowSpan || Math.round(Math.max(2, (it.height || 240) / GRID_ROW_HEIGHT))),
         order_index: idx,
-        // 同步保存相对宽度，后端会写入 config.widthRatio
-        width_ratio: it.widthRatio,
+        // keep width ratio in config too for backward compatibility
+        width_ratio: it.widthRatio ?? (it.colSpan ? it.colSpan / TOTAL_COLS : undefined),
+        // Persist grid position when available (1-based for CSS Grid)
+        x_position: it.col,
+        y_position: it.row,
       }))
       await api.saveDashboardComponentsLayout(id, updates)
       toast({ title: "已保存", description: "布局尺寸与顺序已保存" })
@@ -551,12 +573,11 @@ export default function EnhancedDashboardBuilder() {
     }
   }
 
-  // Auto-persist order on drag end
+  // Auto-persist order and spans
   useEffect(() => {
-    // 自动保存：当宽度比例、顺序或尺寸变化时，1s 后写回后端（如果期间还有变化则重新计时）
     if (!effectiveDashboardId) return
     const sig = JSON.stringify(
-      canvasItems.map((it, idx) => ({ id: it.id, w: Math.round(it.width), h: Math.round(it.height), o: idx, r: Number.isFinite(it.widthRatio as any) ? Number(it.widthRatio) : null }))
+      canvasItems.map((it, idx) => ({ id: it.id, c: it.colSpan, r: it.rowSpan, x: it.col ?? null, y: it.row ?? null, o: idx, wr: Number.isFinite(it.widthRatio as any) ? Number(it.widthRatio) : null }))
     )
     if (sig === lastSavedSigRef.current) return
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
@@ -564,20 +585,26 @@ export default function EnhancedDashboardBuilder() {
       try {
         const updates = canvasItems.map((it, idx) => ({
           component_id: it.id,
-          width: Math.round(it.width),
-          height: Math.round(it.height),
+          width: Math.max(1, it.colSpan || Math.round(((it.widthRatio ?? 0.33) * TOTAL_COLS) || 3)),
+          height: Math.max(1, it.rowSpan || Math.round(Math.max(2, (it.height || 240) / GRID_ROW_HEIGHT))),
           order_index: idx,
-          width_ratio: it.widthRatio,
+          width_ratio: it.widthRatio ?? (it.colSpan ? it.colSpan / TOTAL_COLS : undefined),
+          x_position: it.col,
+          y_position: it.row,
         }))
         await api.saveDashboardComponentsLayout(effectiveDashboardId, updates)
         lastSavedSigRef.current = sig
       } catch (e) {
-        // 忽略自动保存错误，避免打扰用户；仍可手动点击“保存”
         console.warn('Auto-save layout failed:', e)
       }
     }, 1000)
     return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current) }
   }, [canvasItems, effectiveDashboardId])
+
+  // Keep AI context in sync with current canvas items AFTER render commit to avoid setState during render
+  useEffect(() => {
+    aiActions.setCanvasItems(canvasItems.map(it => ({ id: it.id, title: it.title })))
+  }, [canvasItems])
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const fileInputBottomRef = useRef<HTMLInputElement>(null)
@@ -644,7 +671,6 @@ export default function EnhancedDashboardBuilder() {
     setCanvasItems(nextItems)
     // Also remove from AI context if present
     aiActions.removeFromContext(itemId)
-    aiActions.setCanvasItems(nextItems.map(it => ({ id: it.id, title: it.title })))
   }, [canvasItems, toast, aiActions])
 
   const handleAddToContext = useCallback((itemId: string) => {
@@ -708,8 +734,7 @@ export default function EnhancedDashboardBuilder() {
               items={canvasItems}
               onItemsChange={(items) => {
                 setCanvasItems(items)
-                aiActions.setCanvasItems(items.map(it => ({ id: it.id, title: it.title })))}
-              }
+              }}
               onDeleteItem={handleDeleteItem}
               onAddToContext={handleAddToContext}
               onMinimizeItem={handleMinimizeItem}
@@ -843,7 +868,6 @@ export default function EnhancedDashboardBuilder() {
                   data,
                 }
               })
-              aiActions.setCanvasItems(next.map(it => ({ id: it.id, title: it.title })))
               return next
             })
           } catch (e) {

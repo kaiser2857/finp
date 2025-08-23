@@ -149,6 +149,21 @@ G -->|Spec| C
 14. 看板内容容器，初始化为空图幅，当读取不到组件信息时，再展示原添加组件or添加文件的大卡片
 15. 把搜索功能也挪到智能看板里，（可以和+号一行点击唤出），支持按看板名搜索模糊匹配，原搜索位置留一个logo+title占位
 16. 数据源支持修改操作
-17. 引用原来的看板布局文件，就是一行里，我调整一个组件宽度，另外一个组件的宽度应该是不动的，是刚性的，如果宽度超了就挤到下一行，这是我主动调整一定是这个效果。但是因为AIchat的弹出等其他原因，看板宽度被动伸缩的时候，我希望你自动伸缩组件宽度的时候，每个组件宽度都能去跟着自动改变，不要去触发换行，这是自动的是这样的效果。
-18. 添加组件dialog,在切换类型时，重置表单
+17. 鸽鸽
+18. 添加组件的dialog,在切换类型时，重置表单
 19. 所有dialog在提交后记得重置表单，包括数据源、数据库连接
+
+---
+
+## 🧰 运维脚本（Ops）
+- 可选：组件配置多序列迁移（将旧版单 y 配置持久化为 encoding.series）  
+  - 脚本：`backend/scripts/migrate_component_configs_to_multiseries.py`  
+  - 功能：
+    - 将 legacy `encoding.y` → `encoding.series = [{ y, label }]`
+    - 将 legacy `encoding.color` → `encoding._legacyColor`
+    - 对于 bar，确保 `options.stacked` 字段存在（默认 false）
+  - 特性：幂等；支持 `--dry-run` 预演；不更改 query_config
+  - 说明：后端已做「读时迁移」，本脚本仅用于一次性持久化到 DB
+- 数据源表结构对齐（旧库 → 新库字段补齐）  
+  - 脚本：`backend/scripts/migrate_legacy_schema.py`  
+  - 功能：为 `datasources` 表补齐缺失列与外键，安全重复执行

@@ -261,6 +261,7 @@ export function AddTemplateComponentDialog({ open, onOpenChange, dashboardId, on
         mark: templateType,
         options: {
           ...(templateType === "bar" ? { stacked: Boolean(stacked) } : {}),
+          ...(templateType === "line" ? { stacked: Boolean(stacked) } : {}),
         }
       }
 
@@ -369,7 +370,7 @@ export function AddTemplateComponentDialog({ open, onOpenChange, dashboardId, on
       <div className="p-3 border rounded-md bg-white">
         <div className="text-sm font-medium mb-2">{name || defaultNameMap[templateType]}</div>
         <div className="h-[340px] lg:h-[420px]">
-          <ChartCard type={type} data={{ labels: data.labels, datasets: data.datasets }} stacked={type === "bar" ? stacked : undefined} />
+          <ChartCard type={type} data={{ labels: data.labels, datasets: data.datasets }} stacked={stacked} />
         </div>
       </div>
     )
@@ -777,6 +778,13 @@ export function AddTemplateComponentDialog({ open, onOpenChange, dashboardId, on
                   <div className="mt-2 flex items-center gap-2">
                     <Switch id="stacked" checked={stacked} onCheckedChange={setStacked} />
                     <Label htmlFor="stacked">累计堆叠</Label>
+                  </div>
+                )}
+
+                {templateType === "line" && (
+                  <div className="mt-2 flex items-center gap-2">
+                    <Switch id="stacked-line" checked={stacked} onCheckedChange={setStacked} />
+                    <Label htmlFor="stacked-line">累计堆叠</Label>
                   </div>
                 )}
 
