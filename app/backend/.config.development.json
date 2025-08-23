@@ -1,0 +1,43 @@
+{
+  "das": {
+    "base_url_page": "",
+    "base_url_thread": "",
+    "token": ""
+  },
+  "llm": {
+    "api_key": "sk-9b39aa3a11c44fa0ae54d0465d6dc9cb",
+    "api_base": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+    "model_name": "qwen-plus-latest",
+    "max_rpm": 100
+  },
+  "mutlimodel": {
+    "api_key": "sk-9b39aa3a11c44fa0ae54d0465d6dc9cb",
+    "api_base": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+    "model_name": "qwen2.5-vl-32b-instruct",
+    "max_rpm": 100
+  },
+  "llm_default": {
+    "api_key": "sk-9b39aa3a11c44fa0ae54d0465d6dc9cb",
+    "api_base": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+    "model_name": "qwen-turbo"
+  },
+  "llm_think": {
+    "api_key": "sk-9b39aa3a11c44fa0ae54d0465d6dc9cb",
+    "api_base": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+    "model_name": "deepseek-r1"
+  },
+  "embedding": {
+    "api_key": "sk-9b39aa3a11c44fa0ae54d0465d6dc9cb",
+    "api_base": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+    "model_name": "text-embedding-v4"
+  },
+  "vector_db": {
+    "host": "http://115.27.162.243:6333"
+  },
+  "db": {
+    "connection_string": "mysql+mysqlconnector://root:123456@localhost:3306/search_db"
+  },
+  "etl_base_url": "http://115.27.162.243:8000",
+  "log_path": "./",
+  "root_path": "./"
+}

@@ -1,0 +1,73 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.pdm-python
+*.egg-info/
+.venv/
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+dist/
+dist-ssr/
+*.local
+
+# IDEs and Editors
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.vs/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Operating System
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# Temporary files
+.temp/
+.temp_old/
+.rag-cache/
+
+# Data directories (exclude data files)
+/app/data/
+/app/tessdata/
+
+# Applications
+*.app
+*.exe
+*.war
+*.jar
+
+# Large media files
+*.mp4
+*.tiff
+*.avi
+*.flv
+*.mov
+*.wmv
+
+# Test reports
+TEST*.xml
+
+# Build directories
+target/
+build/
+
