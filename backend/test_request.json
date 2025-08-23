@@ -1,0 +1,11 @@
+{
+  "question": "Hello, this is a test question",
+  "chartContext": {
+    "tables": [
+      {
+        "name": "test_table",
+        "columns": ["id", "name", "value"]
+      }
+    ]
+  }
+}

@@ -1,0 +1,27 @@
+[tool.poetry]
+name = "mcp-rag-backend"
+version = "0.1.0"
+description = "MCP RAG backend with FastAPI"
+authors = ["you <you@example.com>"]
+packages = [{include = "app", from = "src"}, {include = "mcp_tools", from = "src"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+fastapi = "^0.111.0"
+uvicorn = "^0.30.0"
+psycopg2-binary = "^2.9.9"
+pydantic = "^2.8.2"
+openai = "^1.40.0"
+python-dotenv = "^1.0.1"
+# Upgrade FastMCP to v2 for Client support (stdio/in-memory)
+fastmcp = ">=2.10.0,<3.0.0"
+sqlalchemy = "^2.0.0"
+alembic = "^1.13.0"
+requests = "^2.32.5"
+pandas = "^2.0.0"
+pymysql = "^1.1.0"
+cryptography = "^41.0.0"
+sqlalchemy-utils = "^0.41.0"
+
+[tool.poetry.scripts]
+mcp-db = "mcp_tools.db_server:main"

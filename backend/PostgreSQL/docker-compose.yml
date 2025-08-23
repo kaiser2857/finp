@@ -1,0 +1,25 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:15
+    container_name: rag-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: rag
+      POSTGRES_PASSWORD: ragpwd
+      POSTGRES_DB: analytics
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data
+
+  init-loader:
+    build: ./init
+    depends_on:
+      - db
+    environment:
+      DB_URL: postgresql://rag:ragpwd@db:5432/analytics
+    volumes:
+      - ./init:/app
+    command: ["python", "load_data.py"]

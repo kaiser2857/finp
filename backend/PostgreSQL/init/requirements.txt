@@ -1,0 +1,5 @@
+psycopg2-binary==2.9.9
+yfinance==0.2.43
+pandas==2.2.2
+requests==2.32.3
+pandas-datareader==0.10.0

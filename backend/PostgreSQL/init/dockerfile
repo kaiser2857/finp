@@ -1,0 +1,20 @@
+# rag-stack/init/Dockerfile
+FROM docker.m.daocloud.io/python:3.11-slim
+
+WORKDIR /app
+
+# 复制依赖文件
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt && \
+    apt-get update && apt-get install -y cron supervisor && \
+    rm -rf /var/lib/apt/lists/*
+
+# 复制脚本与配置
+COPY load_data.py /app/load_data.py
+COPY supervisord.conf /app/supervisord.conf
+COPY cronjob /etc/cron.d/loadjob
+
+# 配置 cron
+RUN chmod 0644 /etc/cron.d/loadjob && crontab /etc/cron.d/loadjob
+
+CMD ["supervisord", "-c", "/app/supervisord.conf"]
