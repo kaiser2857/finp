@@ -1,4 +1,5 @@
-const API_BASE = import.meta.env.MODE === "development" ? "http://115.27.162.243:8000/api" : "/api";
+const BASE_URL = ((window as any).GC_AI_SEARCH_SERVER_URL) || (window.location.protocol + "//" + window.location.hostname + ":8000");
+const API_BASE = import.meta.env.MODE === "development" ? `${BASE_URL}/api` : "/api";
 
 export const fetchProducts = async () => {
     const res = await fetch(`${API_BASE}/products`);

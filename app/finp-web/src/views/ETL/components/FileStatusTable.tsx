@@ -4,7 +4,8 @@ import { Table, Button, Progress, Popconfirm } from "antd";
 import { DeleteOutlined } from "@ant-design/icons";
 
 // 获取API基址配置
-const API_BASE = import.meta.env.MODE === "development" ? "http://115.27.162.243:8000/api" : "/api";
+const BASE_URL = ((window as any).GC_AI_SEARCH_SERVER_URL) || (window.location.protocol + "//" + window.location.hostname + ":8000");
+const API_BASE = import.meta.env.MODE === "development" ? `${BASE_URL}/api` : "/api";
 
 interface FileStatusTableProps {
   etlFileRows: any[];
@@ -56,7 +57,7 @@ const FileStatusTable: React.FC<FileStatusTableProps> = ({
           width: 220,
           ellipsis: true,
           render: (filename: string) => {
-            // 构建原始文件访问链接，使用正确的API基址
+            // 
             const fileUrl = `${API_BASE}/raw_file/${encodeURIComponent(product)}/${encodeURIComponent(filename)}`;
             return (
               <a

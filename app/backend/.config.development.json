@@ -37,7 +37,8 @@
   "db": {
     "connection_string": "mysql+mysqlconnector://root:123456@localhost:3306/search_db"
   },
-  "etl_base_url": "http://115.27.162.243:8000",
+  "etl_base_url": "http://localhost:8000",
+  "url_location": "http://115.27.162.243:8000",
   "log_path": "./",
   "root_path": "./"
 }

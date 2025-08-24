@@ -126,7 +126,13 @@ def search_sementic_hybrid(client: QdrantClient, query, product):
             all_hits += hits
         except Exception as e:
             logger.error(f"Error searching generic {product}: {e}")
-
+    
+    from rag.common.config import app_config
+    # Fix URL - convert relative paths to full URLs
+    for hit in all_hits:
+        if 'url' in hit.payload and hit.payload['url'].startswith('/'):
+            hit.payload['url'] = f"{app_config.url_location}{hit.payload['url']}"
+    
     return sorted(all_hits, key=lambda x: x.score, reverse=True)
 
 
