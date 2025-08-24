@@ -10,7 +10,6 @@ import {
   ThunderboltOutlined,
   EyeOutlined,
   InboxOutlined,
-  TrophyOutlined,
   HistoryOutlined,
   SafetyOutlined
 } from "@ant-design/icons";
