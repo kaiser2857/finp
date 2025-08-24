@@ -27,4 +27,12 @@
 - **后端**
   pdm install
   pdm run dev
-- ...
+- **数据库**
+  - qdrant: https://github.com/qdrant/qdrant/releases/download/v1.15.3/qdrant-x86_64-pc-windows-msvc.zip
+    直接运行exe文件
+  - mysql: https://dev.mysql.com/downloads/file/?id=544662
+    安装后启动mysql，然后运行python ./app/backend/rag/common/create_database.py
+  - 配置文件在/app/backend/.config.development.json
+
+
+
