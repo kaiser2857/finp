@@ -31,7 +31,6 @@ const TAB_ICONS = [
   CommentOutlined,
   BulbOutlined,
 ];
-const API_BASE = ((window as any).GC_AI_SEARCH_SERVER_URL) || (window.location.protocol + "//" + window.location.hostname + ":8000");
 
 interface HitListProps {
   list: SearchItem[];
