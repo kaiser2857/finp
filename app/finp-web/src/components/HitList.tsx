@@ -49,7 +49,7 @@ const HitItem = ({ item, onShowFullAnswer }: HitItemProps) => {
     raise_gtag_event("search.hit.navigate");
   };
   const { t } = useTranslation();
-  const modifiedUrl = `${API_BASE}${item.payload.url}`
+  const modifiedUrl = `${item.payload.url}`
 
   return (
     <Skeleton title={false} loading={item.loading} active>

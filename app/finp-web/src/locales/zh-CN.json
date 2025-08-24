@@ -42,9 +42,9 @@
     },
     "Tabs": {
         "All": "全部",
-        "Doc": "帮助文档",
-        "ForumQA": "求助中心",
-        "ForumTutorial": "专题教程"
+        "Doc": "财报研报",
+        "ForumQA": "市场数据",
+        "ForumTutorial": "其他"
     },
     "Button": {
         "Search": "搜索",
