@@ -3,7 +3,6 @@ import { isMobile } from "react-device-detect";
 import { SearchInputProps } from "../types";
 import {
   SearchMode,
-  SearchModeNameKey,
 } from "../../../types/Base";
 import { RobotOutlined, RocketOutlined, SearchOutlined } from "@ant-design/icons";
 import { useTranslation } from "react-i18next";
@@ -131,7 +130,7 @@ const SearchInput = ({
                     fontWeight: "500",
                     whiteSpace: "nowrap" // 防止文字换行
                   }}>
-                    {t(SearchModeNameKey[searchMode])}
+                    {searchMode === SearchMode.Chat ? "问答模式" : "思考模式"}
                   </span>
                 )}
               </Button>
@@ -140,7 +139,7 @@ const SearchInput = ({
             {/* 多行输入框 */}
             <TextArea
               value={inputValue}
-              placeholder={t("Home.SearchPlaceholder_Mobile")}
+              placeholder="输入你想了解的问题"
               onChange={onInputChange}
               bordered={false}
               autoSize={{ minRows: 1, maxRows: 6 }}

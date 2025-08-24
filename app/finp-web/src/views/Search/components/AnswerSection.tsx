@@ -65,8 +65,8 @@ const AnswerSection = ({
           <HighlightOutlined style={{ fontSize: "16px" }} />
           <span>
             {searchMode === SearchMode.Think
-              ? t("Answer.DeepThink")
-              : t("Answer.SmartAnswer")}
+              ? "深度思考"
+              : "智能回答"}
           </span>
         </div>
 
@@ -82,7 +82,7 @@ const AnswerSection = ({
               boxShadow: "0 2px 8px rgba(220, 38, 38, 0.2)"
             }}
           >
-            {t("Answer.StopGenerating")}
+            停止生成
           </Button>
         )}
       </div>

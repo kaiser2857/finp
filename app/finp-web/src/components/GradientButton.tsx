@@ -54,7 +54,7 @@ const GradientButton = (props: IProps) => {
             ...props.style
           }}
         >
-          {t("Button.Search")}
+          搜索
         </Button>
       </Space>
     </ConfigProvider>

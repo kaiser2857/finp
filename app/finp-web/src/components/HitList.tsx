@@ -64,7 +64,7 @@ const HitItem = ({ item, onShowFullAnswer }: HitItemProps) => {
               >
                 <Text>{item.payload.answer}</Text>
                 {!item.show_full_answer && (
-                  <Text> {t("Search.ExpandMore")}</Text>
+                  <Text> [展开更多...]</Text>
                 )}
               </Link>
             ) : (
@@ -120,10 +120,10 @@ const HitList = ({ list, loading, onShowFullAnswer }: HitListProps) => {
 
   const getTabItems = () => {
     const TAB_NAMES = [
-      t("Tabs.All"),
-      t("Tabs.Doc"),
-      t("Tabs.ForumQA"),
-      t("Tabs.ForumTutorial"),
+      "全部",
+      "财报研报",
+      "市场数据",
+      "其他",
     ];
     return TAB_ICONS.map((Icon, index) => {
       const id = String(index + 1);

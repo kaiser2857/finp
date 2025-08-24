@@ -45,7 +45,7 @@ const SearchHeader = ({ onGoHome }: SearchHeaderProps) => {
               letterSpacing: "-0.02em"
             }}
           >
-            {t(TextResourcesKey.Common.WebsiteName)}
+            智能投研平台ai搜索
           </Title>
         </a>
       </div>

@@ -34,7 +34,7 @@ const AnswerActions = ({
                 style={{ margin: "8px 0" }}
             >
                 <Typography style={{ color: "#aaa", whiteSpace: "nowrap" }}>
-                    {t("Answer.AIHint")}
+                    以上内容由AI生成，仅供参考。
                 </Typography>
                 <Space style={{ color: "#eee", fontSize: "12px" }}>
                     <Button
@@ -53,7 +53,7 @@ const AnswerActions = ({
                         }
                         onClick={onLike}
                     >
-                        {t("Answer.Useful")}
+                        有用
                     </Button>
                     <Button
                         size="small"
@@ -71,7 +71,7 @@ const AnswerActions = ({
                         }
                         onClick={onDislike}
                     >
-                        {t("Answer.Useless")}
+                        没用
                     </Button>
                     <Button
                         size="small"
@@ -80,7 +80,7 @@ const AnswerActions = ({
                         onClick={onCopy}
                         disabled={index >= 2}
                     >
-                        {t("Answer.Copy")}
+                        复制
                     </Button>
                     <Button
                         size="small"
@@ -89,7 +89,7 @@ const AnswerActions = ({
                         onClick={onCopyImage}
                         disabled={index >= 2}
                     >
-                        {t("Answer.CopyImage")}
+                        复制图像
                     </Button>
                     <Button
                         size="small"
@@ -98,7 +98,7 @@ const AnswerActions = ({
                         onClick={onAskMore}
                         disabled={index >= 2}
                     >
-                        {t("Answer.AskMore")}
+                        追问
                     </Button>
                 </Space>
             </Flex>
@@ -113,7 +113,7 @@ const AnswerActions = ({
                     <TextArea
                         onChange={(e) => onAppendSearchChanged(e.target.value)}
                         onPressEnter={onAppendBoxPressEnter}
-                        placeholder={t("Answer.ContinueAsking")}
+                        placeholder="继续提问"
                         autoSize={{ minRows: 2, maxRows: 5 }}
                         size="large"
                         variant="borderless"

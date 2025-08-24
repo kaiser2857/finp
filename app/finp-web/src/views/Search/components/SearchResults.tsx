@@ -36,7 +36,7 @@ const SearchResults = ({
           fontWeight: "600"
         }}>
           <FileSearchOutlined style={{ fontSize: "16px" }} />
-          <span>{t("Search.SearchResults")}</span>
+          <span>搜索结果</span>
         </div>
 
         {retrivals.length > 1 && (
@@ -57,8 +57,8 @@ const SearchResults = ({
             }}
           >
             {retrivalItem.search.collapsed
-              ? t("Search.Expand")
-              : t("Search.Collapse")}
+              ? "[展开]"
+              : "[收起]"}
           </Button>
         )}
       </div>

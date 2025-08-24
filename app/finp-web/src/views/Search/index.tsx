@@ -289,7 +289,7 @@ const SearchPage = () => {
   const initialize = () => {
     if (inputValue) {
       const title =
-        inputValue + " - " + t(TextResourcesKey.Common.WebsiteName);
+        inputValue + " - 智能投研平台ai搜索";
       window.document.title = title;
     }
 
@@ -358,7 +358,7 @@ const SearchPage = () => {
       searchMode ?? SearchMode.Chat
     )}`;
     const productModeArgStr = `productmode=${encodeURIComponent('generic')}`;
-    window.document.title = t(TextResourcesKey.Common.WebsiteName);
+    window.document.title = "智能投研平台ai搜索";
 
     raise_gtag_event("search.gohome");
 
@@ -419,7 +419,7 @@ const SearchPage = () => {
       key: "1",
       label: (
         <a onClick={() => handleSearchModeChange(SearchMode.Chat)}>
-          {t(SearchModeNameKey[SearchMode.Chat])}
+          问答模式
         </a>
       ),
       icon: searchModeIcons[SearchMode.Chat],
@@ -428,7 +428,7 @@ const SearchPage = () => {
       key: "2",
       label: (
         <a onClick={() => handleSearchModeChange(SearchMode.Think)}>
-          {t(SearchModeNameKey[SearchMode.Think])}
+          思考模式
         </a>
       ),
       icon: searchModeIcons[SearchMode.Think],
@@ -450,7 +450,7 @@ const SearchPage = () => {
 
     messageApi.open({
       type: "success",
-      content: t("Search.Commited"),
+      content: "您的反馈已提交",
       duration: 2,
     });
   };
@@ -470,7 +470,7 @@ const SearchPage = () => {
 
     messageApi.open({
       type: "success",
-      content: t("Search.Commited"),
+      content: "您的反馈已提交",
       duration: 2,
     });
   };
@@ -580,7 +580,7 @@ const SearchPage = () => {
                           );
                           messageApi.open({
                             type: "success",
-                            content: t("Search.Copied"),
+                            content: "已复制",
                             duration: 2,
                           });
                         }
@@ -602,7 +602,7 @@ const SearchPage = () => {
                           messageApi.open({
                             type: "success",
                             content:
-                              t("Search.CopiedImage"),
+                              "已复制图像到剪切板",
                             duration: 2,
                           });
                         }
