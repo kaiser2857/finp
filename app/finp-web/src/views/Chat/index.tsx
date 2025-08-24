@@ -55,6 +55,7 @@ const ChatPage = () => {
   const { products, loading: productsLoading, selectedProduct, selectProduct } = useProducts();
 
   const keywordRef = useRef("");
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const [inputValue, setInputValue] = useState("");
   const [_, setKeyword] = useState("");
   const [answer, setAnswer] = useState("");
@@ -77,6 +78,16 @@ const ChatPage = () => {
   const [selectedModel, setSelectedModel] = useState("gpt-4o");
   const [webSearchEnabled, setWebSearchEnabled] = useState(false);
   const [deepThinkingEnabled, setDeepThinkingEnabled] = useState(false);
+
+  // 自动滚动到底部
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  // 当消息更新时自动滚动到底部
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, answer]);
 
   // 加载历史对话
   useEffect(() => {
@@ -309,39 +320,39 @@ const ChatPage = () => {
     switch (selectedProduct) {
       case 'forguncy':
         return [
-          "如何配置Forguncy服务器？",
-          "Forguncy中如何创建数据表？",
-          "如何在Forguncy中设置用户权限？",
-          "Forguncy移动端开发注意事项"
+          "如何开发银行业务系统？",
+          "金融数据表设计最佳实践",
+          "如何实现风险控制功能？",
+          "移动端金融应用开发指南"
         ];
       case 'wyn':
         return [
-          "Wyn BI的数据连接设置",
-          "如何在Wyn中创建仪表板？",
-          "Wyn报表设计最佳实践",
-          "Wyn数据分析功能介绍"
+          "金融数据分析和报表制作",
+          "如何创建银行业绩仪表板？",
+          "金融风险监控报表设计",
+          "证券投资数据可视化方案"
         ];
       case 'spreadjs':
         return [
-          "SpreadJS的API使用方法",
-          "如何在SpreadJS中导入Excel文件？",
-          "SpreadJS表格公式使用技巧",
-          "SpreadJS性能优化方案"
+          "在金融表格计算中的应用",
+          "如何处理财务报表数据？",
+          "金融公式和函数使用技巧",
+          "证券交易系统界面开发"
         ];
       case 'gcexcel':
         return [
-          "GCExcel的性能优化技巧",
-          "如何使用GCExcel处理大数据？",
-          "GCExcel模板设计指南",
-          "GCExcel图表功能详解"
+          "处理大规模金融数据优化",
+          "如何生成财务分析报告？",
+          "银行对账单批量处理方案",
+          "金融图表和数据透视表功能"
         ];
       case 'generic':
       default:
         return [
-          "如何选择合适的开发工具？",
-          "低代码平台最佳实践",
-          "数据可视化设计原则",
-          "企业级应用开发建议"
+          "金融科技发展趋势和投资机会分析",
+          "银行数字化转型策略和实施路径",
+          "证券市场数据分析和风险评估方法",
+          "保险行业创新产品设计和监管合规"
         ];
     }
   };
@@ -481,7 +492,7 @@ const ChatPage = () => {
                   开始与AI助手对话
                 </Title>
                 <p className="welcome-description">
-                  询问任何关于产品文档、技术问题或寻求解决方案的帮助
+                  询问任何关于金融科技、银行业务、证券投资、保险产品等金融行业的问题，获取专业的解答和建议
                 </p>
                 <div className="suggestion-grid">
                   {getSuggestionQuestions().map((suggestion, index) => (
@@ -533,6 +544,7 @@ const ChatPage = () => {
                     </div>
                   )}
                 </Space>
+                <div ref={messagesEndRef} />
               </div>
             )}
           </div>

@@ -4,7 +4,7 @@
         "Copyright": ""
     },
     "Home": {
-        "SearchPlaceholder": "输入你想了解的产品问题，Enter键发送，Shift+Enter键换行",
+        "SearchPlaceholder": "输入你想了解的问题，Enter键发送，Shift+Enter键换行",
         "SearchPlaceholder_Mobile": "输入你想了解的产品问题",
         "DeepThink": "深度思考"
     },

@@ -315,6 +315,10 @@
   color: white;
 }
 
+.message-bubble.user * {
+  color: white !important;
+}
+
 .message-bubble.assistant {
   background: #f8fafc;
   color: #1e293b;

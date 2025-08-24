@@ -148,9 +148,6 @@ async def chat_streaming(item: ChatModel):
 
     if len(item.messages) == 1:
         keyword = item.messages[0]["content"]
-    elif len(item.messages) >= 7:
-        stream = await getLimitText()
-        return StreamingResponse(stream, media_type="text/event-stream")
     else:
         keyword = await get_llm_full_result(chat_for_query, item.messages)
 
@@ -177,9 +174,6 @@ async def think_streaming(item: ChatModel):
 
     if len(item.messages) == 1:
         keyword = item.messages[0]["content"]
-    elif len(item.messages) >= 7:
-        stream = await getLimitText()
-        return StreamingResponse(stream, media_type="text/event-stream")
     else:
         keyword = await get_llm_full_result(chat_for_query, item.messages)
 
@@ -206,9 +200,6 @@ async def reasearch_streaming(item: ChatModel):
 
     if len(item.messages) == 1:
         keyword = item.messages[0]["content"]
-    elif len(item.messages) >= 7:
-        stream = await getLimitText()
-        return StreamingResponse(stream, media_type="text/event-stream")
     else:
         keyword = await get_llm_full_result(chat_for_query, item.messages)
 
