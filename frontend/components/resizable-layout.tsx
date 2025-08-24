@@ -289,13 +289,13 @@ export default function ResizableLayout({
 
       {/* 中间面板 - 直接渲染，不传递props */}
       <div
-        className={`flex-1 overflow-hidden relative transition-all duration-300 ${
+        className={`flex-1 min-h-0 overflow-hidden relative transition-all duration-300 ${
           centerCollapsed ? "opacity-0" : "opacity-100"
         }`}
         style={{ width: centerWidth }}
       >
         {!centerCollapsed && (
-          <div className="h-full overflow-hidden">
+          <div className="h-full overflow-y-auto">
             {/* 内部容器占满高度，避免嵌套滚动条 */}
             <div style={{ height: "100%" }}>
               {centerPanel}
@@ -348,7 +348,7 @@ export default function ResizableLayout({
               onClick={handleFullscreenRightPanel}
               variant="ghost"
               size="sm"
-              className="text-xs bg-white/80 hover:bg白色 shadow-sm flex items-center gap-1"
+              className="text-xs bg白色/80 hover:bg白色 shadow-sm flex items-center gap-1"
               title={isRightPanelFullscreen ? "退出全屏" : "全屏显示AI助手"}
             >
               {isRightPanelFullscreen ? (

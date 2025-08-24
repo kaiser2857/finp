@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useCallback, useRef, useEffect, useMemo } from "react"
+import { useState, useCallback, useRef, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { X, Minimize2, Plus, Move3D, FileText, GripVertical, Edit3 } from "lucide-react"
@@ -48,9 +48,6 @@ const TOTAL_COLS = 48
 const GRID_GAP = 16
 const GRID_ROW_HEIGHT = 80
 
-// Simple feature flag to disable legacy list reordering when using grid drag
-const ENABLE_LIST_REORDER = false
-
 export default function DashboardCanvas({
   items,
   onItemsChange,
@@ -63,16 +60,14 @@ export default function DashboardCanvas({
 }: DashboardCanvasProps) {
   const [draggedItem, setDraggedItem] = useState<string | null>(null)
   const [resizingItem, setResizingItem] = useState<string | null>(null)
-  const [isDragging, setIsDragging] = useState(false)
   const [isResizing, setIsResizing] = useState(false)
-  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
   const [containerWidth, setContainerWidth] = useState<number>(0)
   const [dragGridTarget, setDragGridTarget] = useState<{ col: number; row: number } | null>(null)
 
-  const dragOffset = useRef({ x: 0, y: 0 })
+  // Track pointer offset within the card at drag start to anchor top-left correctly
+  const dragPointerOffset = useRef<{ x: number; y: number }>({ x: 0, y: 0 })
+
   const resizeStart = useRef({ x: 0, y: 0, width: 0, height: 0, colSpan: 1, rowSpan: 2 })
-  const containerRef = useRef<HTMLDivElement>(null)
-  const scrollAreaRef = useRef<HTMLDivElement>(null)
   const rowRef = useRef<HTMLDivElement>(null)
 
   const sortedItems = [...items].sort((a, b) => a.order - b.order)
@@ -83,54 +78,22 @@ export default function DashboardCanvas({
   }, [items])
 
   useEffect(() => {
-    const updateContainerWidth = () => {
-      let width = 0
-      const el = rowRef.current || containerRef.current || scrollAreaRef.current
-      if (el) width = Math.floor(el.clientWidth)
+    const updateWidth = () => {
+      const el = rowRef.current
+      const width = el ? Math.floor(el.clientWidth) : 0
       if (width > 0) setContainerWidth(width)
     }
-
-    const raf1 = requestAnimationFrame(() => {
-      const raf2 = requestAnimationFrame(updateContainerWidth)
-      ;(updateContainerWidth as any)._raf2 = raf2
-    })
+    updateWidth()
 
     const resizeObserver = new ResizeObserver(() => {
-      updateContainerWidth()
+      updateWidth()
     })
-
     if (rowRef.current) resizeObserver.observe(rowRef.current)
-    if (containerRef.current) resizeObserver.observe(containerRef.current)
-    if (scrollAreaRef.current) resizeObserver.observe(scrollAreaRef.current)
-
-    const handleWindowResize = () => updateContainerWidth()
-    window.addEventListener("resize", handleWindowResize)
 
     return () => {
-      window.removeEventListener("resize", handleWindowResize)
       resizeObserver.disconnect()
-      cancelAnimationFrame(raf1)
-      if ((updateContainerWidth as any)._raf2) cancelAnimationFrame((updateContainerWidth as any)._raf2)
     }
   }, [])
-
-  useEffect(() => {
-    let rafA: number | null = null
-    let rafB: number | null = null
-    const run = () => {
-      const el = rowRef.current || containerRef.current || scrollAreaRef.current
-      if (!el) return
-      const width = Math.floor(el.clientWidth)
-      if (width > 0) setContainerWidth(width)
-    }
-    rafA = requestAnimationFrame(() => {
-      rafB = requestAnimationFrame(run)
-    })
-    return () => {
-      if (rafA) cancelAnimationFrame(rafA)
-      if (rafB) cancelAnimationFrame(rafB)
-    }
-  }, [showAIChat])
 
   const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v))
   const getColUnit = useCallback(() => {
@@ -157,7 +120,6 @@ export default function DashboardCanvas({
     [containerWidth],
   )
 
-  // Collision utilities for explicitly positioned items (with col/row defined)
   const rectOf = useCallback((it: CanvasItem): { l: number; r: number; t: number; b: number } | null => {
     const { colSpan, rowSpan } = ensureSpans(it)
     const c = it.col
@@ -176,7 +138,6 @@ export default function DashboardCanvas({
   }, [rectOf])
 
   const moveDownUntilFree = useCallback((draft: CanvasItem, all: CanvasItem[]): CanvasItem => {
-    // Only operate on items with explicit col/row
     if (!draft.col || !draft.row) return draft
     let moved = { ...draft }
     let guard = 0
@@ -191,14 +152,22 @@ export default function DashboardCanvas({
       const grid = rowRef.current
       if (!grid) return null
       const rect = grid.getBoundingClientRect()
-      const x = e.clientX - rect.left
-      const y = e.clientY - rect.top
-      if (x < 0 || y < 0) return null
+      const pointerX = e.clientX - rect.left
+      const pointerY = e.clientY - rect.top
+      if (pointerX < 0 || pointerY < 0) return null
+
+      // Anchor the dragged card's top-left using the pointer offset captured on drag start
+      const anchorX = Math.max(0, pointerX - (dragPointerOffset.current?.x || 0))
+      const anchorY = Math.max(0, pointerY - (dragPointerOffset.current?.y || 0))
+
       const colUnit = getColUnit()
       const trackW = colUnit + GRID_GAP
       const trackH = GRID_ROW_HEIGHT + GRID_GAP
-      let col = Math.floor((x + GRID_GAP / 2) / trackW) + 1
-      let row = Math.floor((y + GRID_GAP / 2) / trackH) + 1
+
+      // Symmetric rounding to nearest track to avoid right-bias
+      let col = Math.round(anchorX / trackW) + 1
+      let row = Math.round(anchorY / trackH) + 1
+
       col = clamp(col, 1, Math.max(1, TOTAL_COLS - colSpan + 1))
       row = clamp(row, 1, 1000)
       return { col, row }
@@ -208,54 +177,27 @@ export default function DashboardCanvas({
 
   const handleDragStart = useCallback((e: React.DragEvent, itemId: string) => {
     setDraggedItem(itemId)
-    setIsDragging(true)
+    // Capture pointer offset inside the card at drag start to improve left/right accuracy
+    const el = e.currentTarget as HTMLElement
+    const rect = el.getBoundingClientRect()
+    dragPointerOffset.current = { x: e.clientX - rect.left, y: e.clientY - rect.top }
+
+    // Use a transparent drag image so the cursor represents the anchor point
+    try {
+      const img = new Image()
+      img.width = 1; img.height = 1
+      e.dataTransfer.setDragImage(img, 0, 0)
+    } catch {}
+
     e.dataTransfer.effectAllowed = "move"
     e.dataTransfer.setData("text/plain", itemId)
   }, [])
 
   const handleDragEnd = useCallback(() => {
     setDraggedItem(null)
-    setIsDragging(false)
-    setDragOverIndex(null)
+    setDragGridTarget(null)
+    dragPointerOffset.current = { x: 0, y: 0 }
   }, [])
-
-  const handleDragOver = useCallback((e: React.DragEvent, index: number) => {
-    e.preventDefault()
-    e.dataTransfer.dropEffect = "move"
-    setDragOverIndex(index)
-  }, [])
-
-  const handleDragLeave = useCallback(() => {
-    setDragOverIndex(null)
-  }, [])
-
-  const handleDrop = useCallback(
-    (e: React.DragEvent, dropIndex: number) => {
-      e.preventDefault()
-      const draggedItemId = e.dataTransfer.getData("text/plain")
-
-      if (!draggedItemId || draggedItemId === sortedItems[dropIndex]?.id) {
-        setDragOverIndex(null)
-        return
-      }
-
-      const draggedItemIndex = sortedItems.findIndex((item) => item.id === draggedItemId)
-      if (draggedItemIndex === -1) return
-
-      const newItems = [...sortedItems]
-      const [draggedItem] = newItems.splice(draggedItemIndex, 1)
-      newItems.splice(dropIndex, 0, draggedItem)
-
-      const updatedItems = newItems.map((item, index) => ({
-        ...item,
-        order: index,
-      }))
-
-      onItemsChange(updatedItems)
-      setDragOverIndex(null)
-    },
-    [sortedItems, onItemsChange],
-  )
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent, itemId: string) => {
@@ -316,7 +258,6 @@ export default function DashboardCanvas({
   )
 
   const handleMouseUp = useCallback(() => {
-    // On resize end, resolve any collisions by pushing the resized card down
     if (resizingItem) {
       const all = itemsRef.current
       const idx = all.findIndex(it => it.id === resizingItem)
@@ -360,6 +301,7 @@ export default function DashboardCanvas({
     (e: React.DragEvent) => {
       if (!draggedItem) return
       e.preventDefault()
+      try { e.dataTransfer.dropEffect = "move" } catch {}
       const item = itemsRef.current.find((it) => it.id === draggedItem)
       if (!item) return
       const { colSpan } = ensureSpans(item)
@@ -379,20 +321,17 @@ export default function DashboardCanvas({
       const pos = computeGridPositionFromEvent(e, colSpan) || dragGridTarget
       if (!pos) { setDragGridTarget(null); return }
 
-      // Place at requested col,row then resolve collisions by pushing down the dragged item
       const prelim = itemsRef.current.map((it) =>
         it.id === draggedItem ? { ...it, col: pos.col, row: pos.row } : it,
       )
       const idx = prelim.findIndex(it => it.id === draggedItem)
-      if (idx === -1) { onItemsChange(prelim); setDragGridTarget(null); setDragOverIndex(null); setDraggedItem(null); setIsDragging(false); return }
+      if (idx === -1) { onItemsChange(prelim); setDragGridTarget(null); setDraggedItem(null); return }
       const moved = moveDownUntilFree(prelim[idx], prelim)
       const resolved = prelim.map((it, i) => i === idx ? moved : it)
 
       onItemsChange(resolved)
       setDragGridTarget(null)
-      setDragOverIndex(null)
       setDraggedItem(null)
-      setIsDragging(false)
     },
     [draggedItem, onItemsChange, ensureSpans, computeGridPositionFromEvent, dragGridTarget, moveDownUntilFree],
   )
@@ -592,8 +531,8 @@ export default function DashboardCanvas({
 
   return (
     <div className="h-full flex flex-col relative">
-      <div className="flex-1 min-h-0 overflow-visible" ref={scrollAreaRef}>
-        <div className="p-4" ref={containerRef}>
+      <div className="flex-1 min-h-0 overflow-visible">
+        <div className="p-4">
           <div
             className="grid gap-4"
             ref={rowRef}
@@ -601,16 +540,16 @@ export default function DashboardCanvas({
             onDrop={handleGridDrop}
             style={{ gridTemplateColumns: `repeat(${TOTAL_COLS}, minmax(0, 1fr))`, gridAutoRows: `${GRID_ROW_HEIGHT}px` }}
           >
-            {sortedItems.map((item, index) => {
+            {sortedItems.map((item) => {
               const spans = ensureSpans(item)
               const widthPct = Math.round((spans.colSpan / TOTAL_COLS) * 100)
               return (
                 <Card
                   key={item.id}
                   draggable
-                  className={`border-2 transition-all duration-200 overflow-hidden group shadow-lg bg-white ${
-                    draggedItem === item.id ? "opacity-50 scale-95" : ""
-                  } ${dragOverIndex === index ? "ring-2 ring-blue-400 ring-offset-2" : ""} ${
+                  className={`border-2 transition-colors overflow-hidden group shadow-lg bg-white ${
+                    draggedItem === item.id ? "opacity-50" : ""
+                  } ${
                     selectedContext.includes(item.id) ? "border-blue-500 ring-1 ring-blue-300" : "border-gray-200 hover:border-blue-400"
                   }`}
                   style={{
@@ -622,11 +561,6 @@ export default function DashboardCanvas({
                   }}
                   onDragStart={(e) => handleDragStart(e, item.id)}
                   onDragEnd={handleDragEnd}
-                  {...(ENABLE_LIST_REORDER ? {
-                    onDragOver: (e: React.DragEvent) => handleDragOver(e, index),
-                    onDragLeave: handleDragLeave,
-                    onDrop: (e: React.DragEvent) => handleDrop(e, index),
-                  } : {})}
                 >
                   <CardHeader
                     className="pb-2 bg-white border-b flex-shrink-0 select-none cursor-move"
