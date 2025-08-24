@@ -533,24 +533,6 @@ const GenericETL: React.FC = () => {
             overflow: 'hidden'
           }}
         >
-          <div style={{
-            background: 'linear-gradient(90deg, #64748b 0%, #475569 100%)',
-            margin: '-24px -24px 16px -24px',
-            padding: '32px 24px',
-            color: 'white'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-              <TrophyOutlined style={{ fontSize: '32px' }} />
-              <div>
-                <Title level={2} style={{ margin: 0, color: 'white' }}>
-                  智能投研平台个人知识库构建
-                </Title>
-                <p style={{ margin: '8px 0 0 0', opacity: 0.9, fontSize: '16px' }}>
-                  一站式文档处理、知识抽取与向量化管理平台
-                </p>
-              </div>
-            </div>
-          </div>
 
           {/* 控制区域 */}
           <div style={{

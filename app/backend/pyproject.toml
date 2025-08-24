@@ -13,6 +13,7 @@ dependencies = [
     "platformdirs>=4.3.7",
     "SQLAlchemy>=2.0.40",
     "mysql-connector-python>=9.3.0",
+    "tailer>=0.4.1",
 ]
 requires-python = "==3.13.*"
 readme = "README.md"

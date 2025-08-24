@@ -72,6 +72,9 @@
   flex-direction: column;
   gap: 12px;
   align-items: center;
+  /* Make collapsed container fill sidebar height and push content to bottom */
+  flex: 1;
+  justify-content: flex-end;
 }
 
 .sidebar-expand-btn {

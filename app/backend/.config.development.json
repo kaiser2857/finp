@@ -32,7 +32,7 @@
     "model_name": "text-embedding-v4"
   },
   "vector_db": {
-    "host": "http://115.27.162.243:6333"
+    "host": " http://localhost:6333"
   },
   "db": {
     "connection_string": "mysql+mysqlconnector://root:123456@localhost:3306/search_db"

@@ -374,25 +374,6 @@ const ChatPage = () => {
         <div className={`chat-sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}>
           {!sidebarCollapsed ? (
             <>
-              <div className="sidebar-header">
-                <Button
-                  type="primary"
-                  icon={<PlusOutlined />}
-                  onClick={handleNewChat}
-                  block
-                  className="new-chat-button"
-                >
-                  新对话
-                </Button>
-                <Button
-                  type="text"
-                  icon={<MenuOutlined />}
-                  onClick={toggleSidebar}
-                  className="sidebar-toggle-btn"
-                  title="收起侧边栏"
-                />
-              </div>
-
               <div className="sidebar-content">
                 <div className="sidebar-section">
                   <div className="section-title">
@@ -435,6 +416,24 @@ const ChatPage = () => {
                     />
                   )}
                 </div>
+              </div>
+              <div className="sidebar-header">
+                <Button
+                  type="primary"
+                  icon={<PlusOutlined />}
+                  onClick={handleNewChat}
+                  block
+                  className="new-chat-button"
+                >
+                  新对话
+                </Button>
+                <Button
+                  type="text"
+                  icon={<MenuOutlined />}
+                  onClick={toggleSidebar}
+                  className="sidebar-toggle-btn"
+                  title="收起侧边栏"
+                />
               </div>
             </>
           ) : (

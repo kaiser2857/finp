@@ -5,7 +5,7 @@
 groups = ["default"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:ca8bb7aedadfaef1be8b8732f6ee704874959a6592cf3cb9bd2531155a42f2c2"
+content_hash = "sha256:abf7ff3360353094ca235404b19f891e20c47736a3a269132eb34bf03c1f3c99"
 
 [[metadata.targets]]
 requires_python = "==3.13.*"
@@ -1164,6 +1164,15 @@ dependencies = [
 files = [
     {file = "starlette-0.46.2-py3-none-any.whl", hash = "sha256:595633ce89f8ffa71a015caed34a5b2dc1c0cdb3f0f1fbd1e69339cf2abeec35"},
     {file = "starlette-0.46.2.tar.gz", hash = "sha256:7f7361f34eed179294600af672f565727419830b54b7b084efe44bb82d2fccd5"},
+]
+
+[[package]]
+name = "tailer"
+version = "0.4.1"
+summary = "Python tail is a simple implementation of GNU tail and head."
+groups = ["default"]
+files = [
+    {file = "tailer-0.4.1.tar.gz", hash = "sha256:78d60f23a1b8a2d32f400b3c8c06b01142ac7841b75d8a1efcb33515877ba531"},
 ]
 
 [[package]]
