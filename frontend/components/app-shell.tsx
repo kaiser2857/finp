@@ -326,6 +326,7 @@ function AppShellInner({ children }: AppShellProps) {
         }
         return ok
       }}
+      onUpdateDashboard={apiActions.updateDashboard}
     />
   )
 

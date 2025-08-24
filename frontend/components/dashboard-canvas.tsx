@@ -592,7 +592,7 @@ export default function DashboardCanvas({
 
   return (
     <div className="h-full flex flex-col relative">
-      <div className="flex-1 overflow-visible" ref={scrollAreaRef}>
+      <div className="flex-1 min-h-0 overflow-visible" ref={scrollAreaRef}>
         <div className="p-4" ref={containerRef}>
           <div
             className="grid gap-4"

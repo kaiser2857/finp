@@ -291,8 +291,8 @@ export function AddTemplateComponentDialog({ open, onOpenChange, dashboardId, on
           query_config: {},
           x_position: 0,
           y_position: 0,
-          width: 6,
-          height: 4,
+          width: 600,
+          height: 400,
           order_index: 0,
         }
 

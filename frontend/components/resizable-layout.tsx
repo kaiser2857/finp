@@ -294,7 +294,14 @@ export default function ResizableLayout({
         }`}
         style={{ width: centerWidth }}
       >
-        {!centerCollapsed && <div className="h-full overflow-y-auto">{centerPanel}</div>}
+        {!centerCollapsed && (
+          <div className="h-full overflow-hidden">
+            {/* 内部容器占满高度，避免嵌套滚动条 */}
+            <div style={{ height: "100%" }}>
+              {centerPanel}
+            </div>
+          </div>
+        )}
 
         {/* 统一的AI Chat按钮 - 在ResizableLayout层级处理 */}
         {chatButtonProps.show && !centerCollapsed && (

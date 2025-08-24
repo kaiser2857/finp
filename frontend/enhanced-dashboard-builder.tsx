@@ -700,9 +700,9 @@ export default function EnhancedDashboardBuilder() {
 
   // 中间面板内容
   const centerPanel = (
-    <div className="h-full flex flex-col" onDragOver={handleDragOver} onDrop={handleDrop}>
-      {loadFailed ? (
-        <div className="flex-1 flex items-center justify-center p-8">
+    <div className="h-full flex flex-col min-h-0" onDragOver={handleDragOver} onDrop={handleDrop}>
+      {!loadFailed && canvasItems.length === 0? (
+        <div className="flex-1 min-h-0 overflow-y-auto flex items-center justify-center p-8">
           <div className="grid grid-cols-1 gap-6 max-w-2xl w-full">
             <Card className="cursor-pointer hover:shadow-lg transition-shadow">
               <CardHeader className="text-center">
@@ -713,7 +713,7 @@ export default function EnhancedDashboardBuilder() {
                 <CardDescription>向您的看板添加组件以开始可视化数据。</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-1 gap-3">
                   <Button className="w-full bg-blue-600 hover:bg-blue-700" onClick={() => openCreateDialog()}>
                     <PlusSquare className="w-4 h-4 mr-2" /> 添加组件
                   </Button>
@@ -741,7 +741,7 @@ export default function EnhancedDashboardBuilder() {
         </div>
       ) : (
         <>
-          <div className="flex-1">
+          <div className="flex-1 min-h-0 overflow-y-auto pb-28">
             <DashboardCanvas
               items={canvasItems}
               onItemsChange={(items) => { setCanvasItems(items) }}
