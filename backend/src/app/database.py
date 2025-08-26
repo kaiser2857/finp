@@ -221,7 +221,7 @@ def init_sample_data():
         if not prices_ds:
             prices_ds = Datasource(
                 name="Stock Prices",
-                type=DatasourceType.TABLE,
+                type=DatasourceType.TABLE.value if hasattr(DatasourceType, 'TABLE') else "table",
                 database_connection_id=default_conn.id,
                 table_name="prices",
                 description="Historical stock price data"
@@ -252,8 +252,8 @@ def init_sample_data():
                 db.add(ColumnDef(
                     datasource_id=prices_ds.id,
                     name=name,
-                    type=ctype,
-                    role=role,
+                    type=(ctype.value if hasattr(ctype, 'value') else str(ctype)),
+                    role=(role.value if hasattr(role, 'value') else str(role)),
                     description=desc
                 ))
         

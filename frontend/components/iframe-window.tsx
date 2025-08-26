@@ -16,12 +16,18 @@ interface IframeWindowProps {
 }
 
 const IframeWindow = forwardRef<IframeWindowHandle, IframeWindowProps>(function IframeWindow(
-  { src, title = "External App", timeoutMs = 5000, className, allowedOrigins, onMessage },
+  { src, title = "External App", timeoutMs = 15000, className, allowedOrigins, onMessage },
   ref,
 ) {
   const iframeRef = useRef<HTMLIFrameElement | null>(null)
   const [loaded, setLoaded] = useState(false)
   const [timedOut, setTimedOut] = useState(false)
+
+  // Reset state when src changes
+  useEffect(() => {
+    setLoaded(false)
+    setTimedOut(false)
+  }, [src])
 
   const defaultTargetOrigin = useMemo(() => {
     try {
@@ -94,7 +100,16 @@ const IframeWindow = forwardRef<IframeWindowHandle, IframeWindowProps>(function 
         ref={iframeRef}
         src={src}
         title={title}
-        onLoad={() => setLoaded(true)}
+        onLoad={() => {
+          // Mark loaded and clear timeout overlay if it appeared
+          setLoaded(true)
+          setTimedOut(false)
+        }}
+        onError={() => {
+          // Explicitly show failure if load error occurs
+          setLoaded(false)
+          setTimedOut(true)
+        }}
         style={{ width: "100%", height: "100%", border: 0, display: "block" }}
       />
     </div>
