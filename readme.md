@@ -5,7 +5,7 @@
 - **数据建模**：看板（Dashboard）、组件（Component）、数据源（Datasource）  
 - **AI 助手**：MCP 工具调用（数据库查询 + 绘图）  
 - **流式交互**：支持前端实时接收 AI 输出  
-- **前端配合规划**：看板管理（仿 Superset）+ AI 助手（仿 OpenBB）  
+- **前端配合规划**：看板管理+ AI 助手
 
 ---
 
@@ -62,12 +62,12 @@
 
 ---
 
-### 5. 前端规划
+### 5. 前端
 - **模块划分**  
-  - 看板管理（Dashboard）：仿 Superset，grid 布局  
-  - 数据源管理（Datasource）：仿 Superset Dataset  
+  - 看板管理（Dashboard）
+  - 数据源管理（Datasource）
   - 组件配置（Component）：选择数据源、配置 encoding/mark  
-  - AI 助手（Agent）：仿 OpenBB，独立交互区，支持图表结果  
+  - AI 助手（Agent）：独立交互区，支持图表结果  
 - **交互流程**  
   - 用户选组件 → 绑定数据源 → 渲染图表  
   - 用户提问 → `/agent/stream` → AI 生成 SQL + 图表 spec → 前端渲染  
